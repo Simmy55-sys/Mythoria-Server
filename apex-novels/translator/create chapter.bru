@@ -1,0 +1,30 @@
+meta {
+  name: create chapter
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/translator/series/chapter/srs_01KBR1G35SFRZQMACQ99Y60TC2
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzcl8wMUtCTUpaRkpCSlQ4SEhUWjEwQ05aVzIzOCIsInJvbGUiOiJ0cmFuc2xhdG9yIiwiaWF0IjoxNzY0ODQ5MTQ0LCJleHAiOjE3Njc0NDExNDR9.B04ToxWgjLlb4qL_oRvzpIn1TTHNIQPTwy6wHq4TQy4
+}
+
+body:json {
+  {
+    "title": "Coming to new york",
+    "content": "I came to new york today, Dope",
+    "publishDate": "2025-03-31",
+    "language": "english",
+    "chapterNumber": 1
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

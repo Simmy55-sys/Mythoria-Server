@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "apex-novels",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

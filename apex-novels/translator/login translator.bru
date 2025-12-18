@@ -1,0 +1,23 @@
+meta {
+  name: login translator
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/account/translator/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "translator@system.com",
+    "password": "translator@123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

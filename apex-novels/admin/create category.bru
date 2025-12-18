@@ -1,0 +1,26 @@
+meta {
+  name: create category
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/admin/create-category
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NDg0ODg2MSwiZXhwIjoxNzY3NDQwODYxfQ.WWskNMxV6K3zJuMxRiwwMlFQiIgh9D6_503jtjcof3M
+}
+
+body:json {
+  {
+    "name": "Action"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

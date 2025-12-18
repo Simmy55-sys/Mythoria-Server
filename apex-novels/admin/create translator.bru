@@ -1,0 +1,27 @@
+meta {
+  name: create translator
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/admin/create-translator
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NDg0ODQzNCwiZXhwIjoxNzY3NDQwNDM0fQ.yTL-ac_Sa7sKX1eyHrJzax_ZZB7XoPwCAcmmCAATK34
+}
+
+body:json {
+  {
+    "email": "translator@system.com",
+    "username": "translator123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

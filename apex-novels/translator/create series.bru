@@ -1,0 +1,34 @@
+meta {
+  name: create series
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/translator/series/create
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzcl8wMUtCTUpaRkpCSlQ4SEhUWjEwQ05aVzIzOCIsInJvbGUiOiJ0cmFuc2xhdG9yIiwiaWF0IjoxNzY0ODQ5MTQ0LCJleHAiOjE3Njc0NDExNDR9.B04ToxWgjLlb4qL_oRvzpIn1TTHNIQPTwy6wHq4TQy4
+}
+
+body:json {
+  {
+    "assignmentId": "LCIvcdEzKr",
+    "categories": [
+      "action"
+    ],
+    "author": "Mr Lee",
+    "status": "ongoing",
+    "novelType": "novel",
+    "originalLanguage": "english",
+    "slug": "Cook"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Payment webhook
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {"id":"WH-9T1930667W920635U-3XY092457R122342W","event_version":"1.0","create_time":"2025-12-16T08:59:14.985Z","resource_type":"capture","resource_version":"2.0","event_type":"PAYMENT.CAPTURE.COMPLETED","summary":"Payment completed for $ 6.5 USD","resource":{"payee":{"email_address":"sb-7dtah48154704@business.example.com","merchant_id":"4VRRUJB5KSCGC"},"amount":{"value":"6.50","currency_code":"USD"},"seller_protection":{"dispute_categories":["ITEM_NOT_RECEIVED","UNAUTHORIZED_TRANSACTION"],"status":"ELIGIBLE"},"supplementary_data":{"related_ids":{"order_id":"3P964143T2578014S"}},"update_time":"2025-12-16T08:59:10Z","create_time":"2025-12-16T08:59:10Z","final_capture":true,"seller_receivable_breakdown":{"exchange_rate":{"source_currency":"USD","target_currency":"GBP","value":"0.735687352427185"},"paypal_fee":{"value":"0.52","currency_code":"USD"},"gross_amount":{"value":"6.50","currency_code":"USD"},"net_amount":{"value":"5.98","currency_code":"USD"},"receivable_amount":{"value":"4.40","currency_code":"GBP"}},"links":[{"method":"GET","rel":"self","href":"https://api.sandbox.paypal.com/v2/payments/captures/5XK12679FF755393N"},{"method":"POST","rel":"refund","href":"https://api.sandbox.paypal.com/v2/payments/captures/5XK12679FF755393N/refund"},{"method":"GET","rel":"up","href":"https://api.sandbox.paypal.com/v2/checkout/orders/3P964143T2578014S"}],"id":"5XK12679FF755393N","status":"COMPLETED"},"links":[{"href":"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9T1930667W920635U-3XY092457R122342W","rel":"self","method":"GET"},{"href":"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-9T1930667W920635U-3XY092457R122342W/resend","rel":"resend","method":"POST"}]}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

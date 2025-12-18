@@ -1,0 +1,20 @@
+meta {
+  name: create comment
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/comment
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzcl8wMUtCTUpaRkpCSlQ4SEhUWjEwQ05aVzIzOCIsInJvbGUiOiJ0cmFuc2xhdG9yIiwiaWF0IjoxNzY0ODQ5MTQ0LCJleHAiOjE3Njc0NDExNDR9.B04ToxWgjLlb4qL_oRvzpIn1TTHNIQPTwy6wHq4TQy4
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

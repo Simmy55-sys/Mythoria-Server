@@ -1,0 +1,74 @@
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+} from "typeorm";
+import { BaseEntity } from "src/interface/model/base.entity";
+import { Category } from "./category.entity";
+import { Chapter } from "./chapter.entity";
+import { TranslatorAssignment } from "./series-translator-assignment.entity";
+import { Comment } from "./comment.entity";
+import { Rating } from "./rating.entity";
+import { Bookmark } from "./bookmark.entity";
+
+@Entity("series")
+export class Series extends BaseEntity {
+  protected id_prefix = "srs";
+
+  @Column()
+  title: string;
+
+  @Column()
+  author: string;
+
+  @Column({ name: "translator_name" })
+  translatorName: string; // captured from the translator user creating it
+
+  @Column("text")
+  description: string;
+
+  @Column({ default: true, name: "is_visible" })
+  isVisible: boolean; // visible to readers after admin review
+
+  @Column({ default: "ongoing" })
+  status: "ongoing" | "completed";
+
+  @Column({ unique: true })
+  slug: string;
+
+  @Column({ default: "novel", name: "novel_type" })
+  novelType: "novel" | "manga" | "manhwa";
+
+  @Column({ name: "original_language" })
+  originalLanguage: string;
+
+  @Column({ nullable: true, name: "featured_image" })
+  featuredImage: string;
+
+  @Column({ name: "assignment_id" })
+  assignmentId: string; // foreign key to the translator assignment
+
+  @ManyToMany(() => Category, (category) => category.series, { eager: true })
+  @JoinTable({ name: "series_categories" })
+  categories: Category[];
+
+  @OneToMany(() => Chapter, (c) => c.series)
+  chapters: Chapter[];
+
+  @OneToOne(() => TranslatorAssignment, (a) => a.series)
+  @JoinColumn({ name: "assignment_id" })
+  translatorAssignments: TranslatorAssignment[];
+
+  @OneToMany(() => Comment, (c) => c.series)
+  comments: Comment[];
+
+  @OneToMany(() => Rating, (r) => r.series)
+  ratings: Rating[];
+
+  @OneToMany(() => Bookmark, (b) => b.series)
+  bookmarks: Bookmark[];
+}

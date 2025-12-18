@@ -1,0 +1,1 @@
+- Send mail for Translator registeration by admin commented out

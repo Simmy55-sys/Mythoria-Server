@@ -1,0 +1,29 @@
+meta {
+  name: Register webhook
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/payment/webhook/register
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "url": "https://webhook.site/8eacbb35-ef1c-4357-9daf-fbe01703834b",
+    "eventTypes": [
+      "PAYMENT.CAPTURE.COMPLETED",
+      "PAYMENT.CAPTURE.DENIED",
+      "PAYMENT.CAPTURE.REFUNDED",
+      "CHECKOUT.ORDER.COMPLETED",
+      "CHECKOUT.ORDER.CANCELLED"
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

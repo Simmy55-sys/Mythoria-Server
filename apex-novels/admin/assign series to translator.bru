@@ -1,0 +1,27 @@
+meta {
+  name: assign series to translator
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/admin/assign-series
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InVzciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NDg0ODQzNCwiZXhwIjoxNzY3NDQwNDM0fQ.yTL-ac_Sa7sKX1eyHrJzax_ZZB7XoPwCAcmmCAATK34
+}
+
+body:json {
+  {
+    "seriesName": "How I Met your mother",
+    "translatorId": "usr_01KBMJZFJBJT8HHTZ10CNZW238"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
