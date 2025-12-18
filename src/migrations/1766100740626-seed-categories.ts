@@ -19,10 +19,13 @@ const categories = [
   "Martial Arts",
 ];
 
-export class SeedDefaultCategories1720000000000 implements MigrationInterface {
-  name = "SeedDefaultCategories1720000000000";
+export class SeedCategories1766100740626 implements MigrationInterface {
+  name = "SeedCategories1766100740626";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "chapters" ALTER COLUMN "publish_date" SET DEFAULT '"2025-12-18T23:32:21.866Z"'`,
+    );
     for (const name of categories) {
       await queryRunner.query(
         `INSERT INTO "category" ("id", "name") VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -32,6 +35,9 @@ export class SeedDefaultCategories1720000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "chapters" ALTER COLUMN "publish_date" SET DEFAULT '2025-12-15 23:03:24.545+01'`,
+    );
     for (const name of categories) {
       await queryRunner.query(`DELETE FROM "category" WHERE "name" = $1`, [
         name,
