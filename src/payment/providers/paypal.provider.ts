@@ -160,7 +160,7 @@ export class PayPalProvider extends AbstractPaymentProvider {
       orderRequest.application_context = {
         return_url: returnUrl,
         cancel_url: cancelUrl,
-        brand_name: "Mythoria.com",
+        brand_name: "www.mythoriatales.com",
         shipping_preference: "NO_SHIPPING",
         user_action: "PAY_NOW",
       };
