@@ -10,7 +10,6 @@ import {
   UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
-import { UserService } from "src/user/user.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { AccountService } from "./account.service";
 import { Request, Response } from "express";
@@ -58,6 +57,10 @@ export class AccountController {
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: "/",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".mythoriatales.com"
+          : "localhost",
     });
 
     return userResponseTransformer(reader);
@@ -81,6 +84,10 @@ export class AccountController {
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: "/",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? "..mythoriatales.com"
+          : "localhost",
     });
 
     return {

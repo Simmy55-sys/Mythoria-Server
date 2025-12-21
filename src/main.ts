@@ -24,6 +24,10 @@ async function bootstrap() {
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Allow cookies to be sent
+    domain:
+      process.env.NODE_ENV === "production"
+        ? ".mythoriatales.com"
+        : "localhost",
   });
 
   //* Register the response interceptor
