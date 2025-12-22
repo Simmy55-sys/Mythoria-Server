@@ -86,7 +86,7 @@ export class AccountController {
       path: "/",
       domain:
         process.env.NODE_ENV === "production"
-          ? "..mythoriatales.com"
+          ? ".mythoriatales.com"
           : "localhost",
     });
 
