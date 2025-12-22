@@ -18,10 +18,14 @@ import { Role } from "src/global/enum";
 import { LoginDto } from "./dto/login.dto";
 import { userResponseTransformer } from "src/transformers/user.transformer";
 import { CreateUserDto } from "src/user/dto/create-user.dto";
+import { UserService } from "src/user/user.service";
 
 @Controller("account")
 export class AccountController {
-  constructor(private accountService: AccountService) {}
+  constructor(
+    private accountService: AccountService,
+    private userService: UserService,
+  ) {}
 
   @Patch("change-password")
   @UseGuards(IsAuthenticated)
@@ -141,10 +145,13 @@ export class AccountController {
   @UseGuards(IsAuthenticated)
   async getCurrentUser(@Req() request: Request) {
     const { user } = request;
+
     if (!user) {
       throw new UnauthorizedException("User not authenticated");
     }
-    return userResponseTransformer(user);
+
+    const userData = await this.userService.getProfile(user?.id ?? "");
+    return userResponseTransformer(userData);
   }
 
   @Post("logout")
