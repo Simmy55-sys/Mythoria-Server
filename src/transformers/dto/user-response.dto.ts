@@ -12,4 +12,7 @@ export class UserResponseDto {
 
   @Expose()
   role: string;
+
+  @Expose()
+  coinBalance: number;
 }

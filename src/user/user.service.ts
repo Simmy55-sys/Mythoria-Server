@@ -88,7 +88,10 @@ export class UserService extends BaseService {
       action: "findOne",
       opsArgs: [
         User,
-        { where: { id }, select: ["id", "username", "email", "role"] },
+        {
+          where: { id },
+          select: ["id", "username", "email", "role", "coinBalance"],
+        },
       ],
     });
   }
