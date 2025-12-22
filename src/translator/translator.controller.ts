@@ -16,6 +16,7 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 import { CreateSeriesDto } from "./dto/create-series.dto";
+import { UpdateSeriesDto } from "./dto/update-series.dto";
 import { TranslatorService } from "./translator.service";
 import { IsAuthenticated } from "src/account/guard/is-authenticated.guard";
 import { IsTranslator } from "src/account/guard/roles/is-translator.guard";
@@ -96,6 +97,37 @@ export class TranslatorController {
       await this.translatorService.createSeries(
         _body,
         user?.id ?? "",
+        featuredImage,
+      ),
+    );
+  }
+
+  @Patch("series/:seriesId")
+  @UseGuards(IsAuthenticated, IsTranslator, SeriesAssignmentGuard)
+  @UseInterceptors(FileInterceptor("featuredImage"))
+  async updateSeries(
+    @Param("seriesId") seriesId: string,
+    @Body() dto: UpdateSeriesDto,
+    @Req() request: Request,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 }), // 50MB
+          new FileTypeValidator({
+            fileType: /(image|video|application)\/(.*)/,
+          }),
+        ],
+        fileIsRequired: false, // featuredImage is optional
+      }),
+    )
+    featuredImage?: Express.Multer.File,
+  ) {
+    const { user } = request;
+    return seriesResponseTransformer(
+      await this.translatorService.updateSeries(
+        seriesId,
+        user?.id ?? "",
+        dto,
         featuredImage,
       ),
     );

@@ -16,6 +16,7 @@ import {
 } from "typeorm";
 import { Series } from "src/model/series.entity";
 import { CreateSeriesDto } from "./dto/create-series.dto";
+import { UpdateSeriesDto } from "./dto/update-series.dto";
 import { Category } from "src/model/category.entity";
 import { CloudinaryService } from "src/cloudinary/cloudinary.service";
 import { PurchasedChapter } from "src/model/purchased-chapter.entity";
@@ -123,6 +124,82 @@ export class TranslatorService extends BaseService {
     });
 
     return savedSeries;
+  }
+
+  async updateSeries(
+    seriesId: string,
+    translatorId: string,
+    dto: UpdateSeriesDto,
+    featuredImage?: Express.Multer.File,
+    transactionalEntity?: EntityManager,
+  ) {
+    // Verify the series belongs to this translator
+    const assignment = await this.assignmentRepo.findOne({
+      where: { translatorId, isSeriesCreated: true },
+      relations: ["series"],
+    });
+
+    if (!assignment || !assignment.series || assignment.series.id !== seriesId) {
+      throw new NotFoundException(
+        "Series not found or you don't have permission to edit it",
+      );
+    }
+
+    const series = await this.seriesRepo.findOne({
+      where: { id: seriesId },
+      relations: ["categories"],
+    });
+
+    if (!series) {
+      throw new NotFoundException("Series not found");
+    }
+
+    // Handle featured image upload if provided
+    if (featuredImage) {
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        featuredImage,
+        "series/featured-images/" + series.title,
+      );
+      if (!uploadResult)
+        throw new BadRequestException("Failed to upload featured image");
+      dto.featuredImage = uploadResult.secure_url;
+    }
+
+    // Handle categories update if provided
+    if (dto.categories) {
+      // Validate categories exist
+      for (const category of dto.categories.split(",")) {
+        const existingCategory = await this.categoryRepo.findOne({
+          where: { name: category.trim() },
+        });
+
+        if (!existingCategory)
+          throw new NotFoundException(`Category ${category} not found`);
+      }
+
+      // Update categories
+      const categories = await this.categoryRepo.find({
+        where: { name: In(dto.categories.split(",").map((c) => c.trim())) },
+      });
+      series.categories = categories;
+    }
+
+    // Update other fields
+    if (dto.description !== undefined) series.description = dto.description;
+    if (dto.slug !== undefined) series.slug = dto.slug;
+    if (dto.author !== undefined) series.author = dto.author;
+    if (dto.status !== undefined) series.status = dto.status;
+    if (dto.novelType !== undefined) series.novelType = dto.novelType;
+    if (dto.originalLanguage !== undefined)
+      series.originalLanguage = dto.originalLanguage;
+    if (dto.featuredImage !== undefined) series.featuredImage = dto.featuredImage;
+
+    return this.performEntityOps<Series, Series>({
+      repositoryManager: this.seriesRepo,
+      transactionalEntity,
+      action: "save",
+      opsArgs: [series],
+    });
   }
 
   async getAssignmentByAssignmentId(
