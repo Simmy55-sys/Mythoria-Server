@@ -7,12 +7,14 @@ import {
   MinLength,
 } from "class-validator";
 import { Role } from "src/global/enum";
+import { Transform } from "class-transformer";
 
 export class CreateUserDto {
   @IsNotEmpty()
   username: string;
 
   @IsEmail()
+  @Transform(({ value }) => value.toLowerCase())
   email: string;
 
   @MinLength(6)
