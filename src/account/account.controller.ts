@@ -110,13 +110,29 @@ export class AccountController {
 
   @Post("admin/login")
   @HttpCode(200)
-  async adminLogin(@Body() _body: LoginDto) {
+  async adminLogin(
+    @Body() _body: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const { accessToken, user: admin } = await this.accountService.login(
       _body,
       Role.ADMIN,
     );
+
+    // Set JWT token as HTTP-only cookie
+    response.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".mythoriatales.com"
+          : "localhost",
+    });
+
     return {
-      accessToken,
       user: userResponseTransformer(admin),
     };
   }

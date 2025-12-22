@@ -54,7 +54,7 @@ export class UserService extends BaseService {
     },
     transactionalEntity?: EntityManager,
   ) {
-    return this.performEntityOps<User, User>({
+    return this.performEntityOps<User, User[]>({
       repositoryManager: this.usersRepo,
       transactionalEntity,
       action: "find",

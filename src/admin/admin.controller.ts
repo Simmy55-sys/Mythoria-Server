@@ -1,4 +1,14 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import { CreateTranslatorDto } from "src/user/dto/create-user.dto";
 import { userResponseTransformer } from "src/transformers/user.transformer";
@@ -19,9 +29,13 @@ export class AdminController {
 
   @Post("create-translator")
   async createTranslator(@Body() _body: CreateTranslatorDto) {
-    return userResponseTransformer(
-      await this.adminService.createTranslator(_body),
-    );
+    const result = await this.adminService.createTranslator(_body);
+    const transformedUser = userResponseTransformer(result);
+    // Include password in response for admin to share with translator
+    return {
+      ...transformedUser,
+      password: result.password,
+    };
   }
 
   @Post("assign-series")
@@ -47,5 +61,27 @@ export class AdminController {
     return categoryResponseTransformer(
       await this.categoryService.createCategory(_body),
     );
+  }
+
+  @Get("translators")
+  async getTranslators() {
+    return await this.adminService.getTranslators();
+  }
+
+  @Get("series")
+  async getSeries() {
+    return await this.adminService.getSeries();
+  }
+
+  @Patch("translators/:id/toggle-status")
+  @HttpCode(200)
+  async toggleTranslatorStatus(@Param("id") id: string) {
+    return await this.adminService.toggleTranslatorStatus(id);
+  }
+
+  @Delete("translators/:id")
+  @HttpCode(200)
+  async deleteTranslator(@Param("id") id: string) {
+    return await this.adminService.deleteTranslator(id);
   }
 }
