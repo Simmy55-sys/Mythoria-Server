@@ -7,16 +7,16 @@ import {
   OneToMany,
   OneToOne,
 } from "typeorm";
-import { BaseEntity } from "src/interface/model/base.entity";
 import { Category } from "./category.entity";
 import { Chapter } from "./chapter.entity";
 import { TranslatorAssignment } from "./series-translator-assignment.entity";
 import { Comment } from "./comment.entity";
 import { Rating } from "./rating.entity";
 import { Bookmark } from "./bookmark.entity";
+import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
 
 @Entity("series")
-export class Series extends BaseEntity {
+export class Series extends SoftDeletableEntity {
   protected id_prefix = "srs";
 
   @Column()

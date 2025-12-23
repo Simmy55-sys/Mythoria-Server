@@ -191,4 +191,28 @@ export class AdminService extends BaseService {
 
     return { message: "Translator deleted successfully" };
   }
+
+  async deleteSeries(seriesId: string) {
+    const series = await this.seriesRepo.findOne({
+      where: { id: seriesId },
+    });
+
+    if (!series) {
+      throw new NotFoundException("Series not found");
+    }
+
+    // Soft delete all chapters associated with this series (only non-deleted ones)
+    const chapters = await this.chapterRepo.find({
+      where: { seriesId },
+    });
+
+    if (chapters.length > 0) {
+      await this.chapterRepo.softRemove(chapters);
+    }
+
+    // Soft delete the series
+    await this.seriesRepo.softRemove(series);
+
+    return { message: "Series deleted successfully" };
+  }
 }

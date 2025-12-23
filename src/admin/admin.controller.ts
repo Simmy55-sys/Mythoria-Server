@@ -84,4 +84,10 @@ export class AdminController {
   async deleteTranslator(@Param("id") id: string) {
     return await this.adminService.deleteTranslator(id);
   }
+
+  @Delete("series/:id")
+  @HttpCode(200)
+  async deleteSeries(@Param("id") id: string) {
+    return await this.adminService.deleteSeries(id);
+  }
 }

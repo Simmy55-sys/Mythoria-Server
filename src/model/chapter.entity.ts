@@ -1,11 +1,11 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from "typeorm";
 import { Series } from "./series.entity";
-import { BaseEntity } from "src/interface/model/base.entity";
 import { Comment } from "./comment.entity";
 import { resolveDbType } from "src/utils/db-parse-column";
+import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
 
 @Entity("chapters")
-export class Chapter extends BaseEntity {
+export class Chapter extends SoftDeletableEntity {
   protected id_prefix = "chp";
 
   @Column({ name: "series_id" })
