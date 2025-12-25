@@ -1,4 +1,11 @@
-import { Column, Entity, Index, OneToMany, Unique } from "typeorm";
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  Index,
+  OneToMany,
+  Unique,
+} from "typeorm";
 import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
 import { Role } from "src/global/enum";
 import { TranslatorAssignment } from "./series-translator-assignment.entity";
@@ -8,8 +15,8 @@ import { Rating } from "./rating.entity";
 import { Bookmark } from "./bookmark.entity";
 
 @Entity("user")
-@Index("email_role_unique", ["email", "role"])
-@Unique(["email", "role"])
+@Index("email_role_deleted_at_unique", ["email", "role", "deletedAt"])
+@Unique(["email", "role", "deletedAt"])
 export class User extends SoftDeletableEntity {
   protected id_prefix = "usr";
 

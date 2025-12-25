@@ -1,11 +1,14 @@
 import {
   Column,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   JoinTable,
   ManyToMany,
   OneToMany,
   OneToOne,
+  Unique,
 } from "typeorm";
 import { Category } from "./category.entity";
 import { Chapter } from "./chapter.entity";
@@ -14,8 +17,11 @@ import { Comment } from "./comment.entity";
 import { Rating } from "./rating.entity";
 import { Bookmark } from "./bookmark.entity";
 import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
+import { resolveDbType } from "src/utils/db-parse-column";
 
 @Entity("series")
+@Index("slug_deleted_at_unique", ["slug", "deletedAt"])
+@Unique(["slug", "deletedAt"])
 export class Series extends SoftDeletableEntity {
   protected id_prefix = "srs";
 
@@ -37,7 +43,7 @@ export class Series extends SoftDeletableEntity {
   @Column({ default: "ongoing" })
   status: "ongoing" | "completed";
 
-  @Column({ unique: true })
+  @Column()
   slug: string;
 
   @Column({ default: "novel", name: "novel_type" })

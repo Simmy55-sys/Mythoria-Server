@@ -20,7 +20,7 @@ export default function databaseConfig(
     password: configService.getOrThrow(DB_PASSWORD),
     database: configService.getOrThrow(DB_NAME),
 
-    entities: ["dist/model/*.entity.js"],
+    entities: ["dist/model/*.entity.js", "dist/interface/model/*.entity.js"],
 
     migrationsTableName: "migration",
 
