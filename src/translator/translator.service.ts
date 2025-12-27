@@ -133,13 +133,19 @@ export class TranslatorService extends BaseService {
     featuredImage?: Express.Multer.File,
     transactionalEntity?: EntityManager,
   ) {
-    // Verify the series belongs to this translator
-    const assignment = await this.assignmentRepo.findOne({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series"],
-    });
+    // Verify the series belongs to this translator, including soft-deleted
+    const assignment = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .andWhere("series.id = :seriesId", { seriesId })
+      .withDeleted() // Include soft-deleted series
+      .getOne();
 
-    if (!assignment || !assignment.series || assignment.series.id !== seriesId) {
+    if (!assignment || !assignment.series) {
       throw new NotFoundException(
         "Series not found or you don't have permission to edit it",
       );
@@ -192,7 +198,8 @@ export class TranslatorService extends BaseService {
     if (dto.novelType !== undefined) series.novelType = dto.novelType;
     if (dto.originalLanguage !== undefined)
       series.originalLanguage = dto.originalLanguage;
-    if (dto.featuredImage !== undefined) series.featuredImage = dto.featuredImage;
+    if (dto.featuredImage !== undefined)
+      series.featuredImage = dto.featuredImage;
 
     return this.performEntityOps<Series, Series>({
       repositoryManager: this.seriesRepo,
@@ -226,16 +233,29 @@ export class TranslatorService extends BaseService {
 
   async getTranslatorSeries(translatorId: string) {
     // Get all assignments for this translator where series has been created
-    const assignments = await this.assignmentRepo.find({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series", "series.chapters", "series.ratings"],
-    });
+    // Use QueryBuilder to include soft-deleted series and chapters
+    const assignments = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .leftJoinAndSelect("series.chapters", "chapters")
+      .leftJoinAndSelect("series.categories", "categories")
+      .leftJoinAndSelect(
+        "series.translatorAssignments",
+        "translatorAssignments",
+      )
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .withDeleted() // Include soft-deleted series and chapters
+      .getMany();
 
     // Map to series with chapter count, views, and rating
     return assignments
       .filter((assignment) => assignment.series)
       .map((assignment) => {
         const series = assignment.series;
+        console.log(series);
         const chapters = series.chapters || [];
 
         // Calculate total views (sum of all chapter readCount)
@@ -262,17 +282,20 @@ export class TranslatorService extends BaseService {
           status: series.status,
           chapters: chapters.length,
           views,
-          rating: averageRating,
+          rating: averageRating || 4.0,
         };
       });
   }
 
   async getSeriesById(seriesId: string, translatorId: string) {
-    // Get the series with all relations
-    const series = await this.seriesRepo.findOne({
-      where: { id: seriesId },
-      relations: ["categories", "chapters"],
-    });
+    // Get the series with all relations, including soft-deleted
+    const series = await this.seriesRepo
+      .createQueryBuilder("series")
+      .leftJoinAndSelect("series.categories", "categories")
+      .leftJoinAndSelect("series.chapters", "chapters")
+      .where("series.id = :seriesId", { seriesId })
+      .withDeleted() // Include soft-deleted series and chapters
+      .getOne();
 
     if (!series) throw new NotFoundException("Series not found");
 
@@ -280,11 +303,17 @@ export class TranslatorService extends BaseService {
   }
 
   async getDashboardStats(translatorId: string) {
-    // Get all series assigned to this translator
-    const assignments = await this.assignmentRepo.find({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series", "series.chapters"],
-    });
+    // Get all series assigned to this translator, including soft-deleted
+    const assignments = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .leftJoinAndSelect("series.chapters", "chapters")
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .withDeleted() // Include soft-deleted series and chapters
+      .getMany();
 
     const seriesIds = assignments
       .filter((a) => a.series)
@@ -301,11 +330,13 @@ export class TranslatorService extends BaseService {
       };
     }
 
-    // Get all chapters for these series
-    const chapters = await this.chapterRepo.find({
-      where: { seriesId: In(seriesIds) },
-      select: ["id", "priceInCoins"],
-    });
+    // Get all chapters for these series, including soft-deleted
+    const chapters = await this.chapterRepo
+      .createQueryBuilder("chapter")
+      .where("chapter.seriesId IN (:...seriesIds)", { seriesIds })
+      .select(["chapter.id", "chapter.priceInCoins"])
+      .withDeleted() // Include soft-deleted chapters
+      .getMany();
 
     const chapterIds = chapters.map((c) => c.id);
 
@@ -313,14 +344,14 @@ export class TranslatorService extends BaseService {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    // Get purchases in the last 6 months for chapters belonging to this translator's series
-    const recentPurchases = await this.purchasedChapterRepo.find({
-      where: {
-        chapterId: In(chapterIds),
-        purchaseDate: MoreThanOrEqual(sixMonthsAgo),
-      },
-      relations: ["chapter"],
-    });
+    // Get purchases in the last 6 months for chapters belonging to this translator's series, including soft-deleted
+    const recentPurchases = await this.purchasedChapterRepo
+      .createQueryBuilder("purchase")
+      .leftJoinAndSelect("purchase.chapter", "chapter")
+      .where("purchase.chapterId IN (:...chapterIds)", { chapterIds })
+      .andWhere("purchase.purchaseDate >= :sixMonthsAgo", { sixMonthsAgo })
+      .withDeleted() // Include soft-deleted chapters
+      .getMany();
 
     // Calculate revenue (sum of chapter prices from the chapter relation)
     const revenue = recentPurchases.reduce((sum, purchase) => {
@@ -374,11 +405,16 @@ export class TranslatorService extends BaseService {
   }
 
   async getMostPopularChapters(translatorId: string, limit: number = 4) {
-    // Get all series assigned to this translator
-    const assignments = await this.assignmentRepo.find({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series"],
-    });
+    // Get all series assigned to this translator, including soft-deleted
+    const assignments = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .withDeleted() // Include soft-deleted series
+      .getMany();
 
     const seriesIds = assignments
       .filter((a) => a.series)
@@ -388,12 +424,20 @@ export class TranslatorService extends BaseService {
       return [];
     }
 
-    // Get all chapters for these series with their series info
-    const chapters = await this.chapterRepo.find({
-      where: { seriesId: In(seriesIds) },
-      select: ["id", "title", "chapterNumber", "priceInCoins", "seriesId"],
-      relations: ["series"],
-    });
+    // Get all chapters for these series with their series info, including soft-deleted
+    const chapters = await this.chapterRepo
+      .createQueryBuilder("chapter")
+      .leftJoinAndSelect("chapter.series", "series")
+      .where("chapter.seriesId IN (:...seriesIds)", { seriesIds })
+      .select([
+        "chapter.id",
+        "chapter.title",
+        "chapter.chapterNumber",
+        "chapter.priceInCoins",
+        "chapter.seriesId",
+      ])
+      .withDeleted() // Include soft-deleted chapters
+      .getMany();
 
     const chapterIds = chapters.map((c) => c.id);
 
@@ -439,11 +483,16 @@ export class TranslatorService extends BaseService {
   }
 
   async getRecentPurchases(translatorId: string, limit: number = 20) {
-    // Get all series assigned to this translator
-    const assignments = await this.assignmentRepo.find({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series"],
-    });
+    // Get all series assigned to this translator, including soft-deleted
+    const assignments = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .withDeleted() // Include soft-deleted series
+      .getMany();
 
     const seriesIds = assignments
       .filter((a) => a.series)
@@ -453,11 +502,13 @@ export class TranslatorService extends BaseService {
       return [];
     }
 
-    // Get all chapters for these series
-    const chapters = await this.chapterRepo.find({
-      where: { seriesId: In(seriesIds) },
-      select: ["id"],
-    });
+    // Get all chapters for these series, including soft-deleted
+    const chapters = await this.chapterRepo
+      .createQueryBuilder("chapter")
+      .where("chapter.seriesId IN (:...seriesIds)", { seriesIds })
+      .select(["chapter.id"])
+      .withDeleted() // Include soft-deleted chapters
+      .getMany();
 
     const chapterIds = chapters.map((c) => c.id);
 
@@ -499,11 +550,16 @@ export class TranslatorService extends BaseService {
   }
 
   async getEarningsData(translatorId: string, year?: number) {
-    // Get all series assigned to this translator
-    const assignments = await this.assignmentRepo.find({
-      where: { translatorId, isSeriesCreated: true },
-      relations: ["series"],
-    });
+    // Get all series assigned to this translator, including soft-deleted
+    const assignments = await this.assignmentRepo
+      .createQueryBuilder("assignment")
+      .leftJoinAndSelect("assignment.series", "series")
+      .where("assignment.translatorId = :translatorId", { translatorId })
+      .andWhere("assignment.isSeriesCreated = :isSeriesCreated", {
+        isSeriesCreated: true,
+      })
+      .withDeleted() // Include soft-deleted series
+      .getMany();
 
     const seriesIds = assignments
       .filter((a) => a.series)
@@ -537,13 +593,13 @@ export class TranslatorService extends BaseService {
       };
     }
 
-    // Get all purchases for these chapters
-    const allPurchases = await this.purchasedChapterRepo.find({
-      where: {
-        chapterId: In(chapterIds),
-      },
-      relations: ["chapter"],
-    });
+    // Get all purchases for these chapters, including soft-deleted
+    const allPurchases = await this.purchasedChapterRepo
+      .createQueryBuilder("purchase")
+      .leftJoinAndSelect("purchase.chapter", "chapter")
+      .where("purchase.chapterId IN (:...chapterIds)", { chapterIds })
+      .withDeleted() // Include soft-deleted chapters
+      .getMany();
 
     // Calculate revenue for each purchase
     const purchasesWithRevenue = allPurchases.map((purchase) => {

@@ -1,6 +1,5 @@
 import {
   Column,
-  DeleteDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -17,7 +16,6 @@ import { Comment } from "./comment.entity";
 import { Rating } from "./rating.entity";
 import { Bookmark } from "./bookmark.entity";
 import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
-import { resolveDbType } from "src/utils/db-parse-column";
 
 @Entity("series")
 @Index("slug_deleted_at_unique", ["slug", "deletedAt"])
@@ -67,7 +65,7 @@ export class Series extends SoftDeletableEntity {
 
   @OneToOne(() => TranslatorAssignment, (a) => a.series)
   @JoinColumn({ name: "assignment_id" })
-  translatorAssignments: TranslatorAssignment[];
+  translatorAssignments: TranslatorAssignment;
 
   @OneToMany(() => Comment, (c) => c.series)
   comments: Comment[];

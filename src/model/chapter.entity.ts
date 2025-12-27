@@ -23,7 +23,6 @@ export class Chapter extends SoftDeletableEntity {
   @Column({
     type: resolveDbType("timestamptz"),
     name: "publish_date",
-    default: new Date(),
   })
   publishDate: Date;
 
@@ -47,7 +46,6 @@ export class Chapter extends SoftDeletableEntity {
 
   @ManyToOne(() => Series, (s) => s.chapters, {
     onDelete: "CASCADE",
-    eager: true,
   })
   @JoinColumn({ name: "series_id" })
   series: Series;
