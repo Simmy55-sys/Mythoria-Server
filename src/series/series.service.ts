@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Series } from "src/model/series.entity";
 import { ChapterRead } from "src/model/chapter-read.entity";
@@ -33,7 +38,7 @@ export class SeriesService extends BaseService {
     const seriesWithChapters = await this.repo
       .createQueryBuilder("series")
       .leftJoin("series.chapters", "chapters")
-      .addSelect("MAX(chapters.publishDate)", "last_chapter_date")
+      .addSelect("MAX(chapters.createdAt)", "last_chapter_date")
       .where("series.isVisible = :isVisible", { isVisible: true })
       .andWhere("chapters.id IS NOT NULL") // Only series with chapters
       .groupBy("series.id")
@@ -295,5 +300,43 @@ export class SeriesService extends BaseService {
       limit,
       totalPages: Math.ceil(totalChapters / limit),
     };
+  }
+
+  async rateSeries(seriesId: string, userId: string, rating: number) {
+    // Verify series exists
+    const series = await this.repo.findOne({ where: { id: seriesId } });
+    if (!series) {
+      throw new NotFoundException("Series not found");
+    }
+
+    // Check if user has already rated this series
+    const existingRating = await this.ratingRepo.findOne({
+      where: { seriesId, userId },
+    });
+
+    if (existingRating) {
+      // Update existing rating
+      existingRating.rating = rating;
+      await this.ratingRepo.save(existingRating);
+      return { message: "Rating updated successfully", rating: existingRating };
+    }
+
+    // Create new rating
+    const newRating = this.ratingRepo.create({
+      seriesId,
+      userId,
+      rating,
+    });
+
+    await this.ratingRepo.save(newRating);
+    return { message: "Rating submitted successfully", rating: newRating };
+  }
+
+  async getUserRating(seriesId: string, userId: string) {
+    const rating = await this.ratingRepo.findOne({
+      where: { seriesId, userId },
+    });
+
+    return rating ? rating.rating : null;
   }
 }

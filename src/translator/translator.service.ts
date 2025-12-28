@@ -255,7 +255,6 @@ export class TranslatorService extends BaseService {
       .filter((assignment) => assignment.series)
       .map((assignment) => {
         const series = assignment.series;
-        console.log(series);
         const chapters = series.chapters || [];
 
         // Calculate total views (sum of all chapter readCount)

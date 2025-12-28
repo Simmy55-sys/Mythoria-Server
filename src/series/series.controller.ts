@@ -1,4 +1,14 @@
-import { Controller, Get, Query, Param, Req, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Param,
+  Req,
+  Body,
+  UseGuards,
+  BadRequestException,
+} from "@nestjs/common";
 import { SeriesService } from "./series.service";
 import { plainToInstance } from "class-transformer";
 import { LatestSeriesResponseDto } from "./dto/latest-series-response.dto";
@@ -9,6 +19,8 @@ import {
   SeriesDetailsChapterDto,
 } from "./dto/series-details-response.dto";
 import { HandleIfAuthenticatedGuard } from "src/account/guard/handle-if-authenticated.guard";
+import { RequireAuthGuard } from "src/account/guard/require-auth.guard";
+import { RateSeriesDto } from "./dto/rate-series.dto";
 import { Request } from "express";
 
 @Controller("series")
@@ -125,5 +137,41 @@ export class SeriesController {
       limit: result.limit,
       totalPages: result.totalPages,
     };
+  }
+
+  @Post(":seriesId/rate")
+  @UseGuards(RequireAuthGuard)
+  async rateSeries(
+    @Param("seriesId") seriesId: string,
+    @Body() rateDto: RateSeriesDto,
+    @Req() request: Request,
+  ) {
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new BadRequestException("User not authenticated");
+    }
+
+    const result = await this.seriesService.rateSeries(
+      seriesId,
+      userId,
+      rateDto.rating,
+    );
+
+    return result;
+  }
+
+  @Get(":seriesId/my-rating")
+  @UseGuards(RequireAuthGuard)
+  async getUserRating(
+    @Param("seriesId") seriesId: string,
+    @Req() request: Request,
+  ) {
+    const userId = request.user?.id;
+    if (!userId) {
+      throw new BadRequestException("User not authenticated");
+    }
+
+    const rating = await this.seriesService.getUserRating(seriesId, userId);
+    return { rating };
   }
 }
