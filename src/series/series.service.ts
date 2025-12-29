@@ -34,55 +34,48 @@ export class SeriesService extends BaseService {
   }
 
   async getLatestSeries(limit: number = 12) {
-    // Get series that have chapters, ordered by the most recent chapter publish date
-    const seriesWithChapters = await this.repo
+    // Subquery to get the latest chapter createdAt for each series
+    const seriesWithLatestChapter = await this.repo
       .createQueryBuilder("series")
       .leftJoin("series.chapters", "chapters")
+      .select("series.id", "seriesId")
       .addSelect("MAX(chapters.createdAt)", "last_chapter_date")
       .where("series.isVisible = :isVisible", { isVisible: true })
-      .andWhere("chapters.id IS NOT NULL") // Only series with chapters
+      .andWhere("chapters.id IS NOT NULL")
       .groupBy("series.id")
       .orderBy("last_chapter_date", "DESC")
-      .addOrderBy("series.createdAt", "DESC")
-      .take(limit)
-      .getMany();
+      .limit(limit)
+      .getRawMany();
 
-    // Get series IDs
-    const seriesIds = seriesWithChapters.map((s) => s.id);
+    const seriesIds = seriesWithLatestChapter.map((s) => s.seriesId);
 
     if (seriesIds.length === 0) {
       return [];
     }
 
-    // Now fetch series with their chapters
+    // Fetch full series data with chapters, preserving order
     const series = await this.repo.find({
       where: { id: In(seriesIds) },
       relations: ["chapters"],
     });
 
-    // Sort chapters within each series by publish date (descending)
-    series.forEach((s) => {
+    // Create a map for quick lookup and preserve ordering
+    const seriesMap = new Map(series.map((s) => [s.id, s]));
+    const orderedSeries = seriesIds
+      .map((id) => seriesMap.get(id))
+      .filter((s): s is NonNullable<typeof s> => s !== undefined);
+
+    // Sort chapters within each series by createdAt (descending)
+    orderedSeries.forEach((s) => {
       if (s.chapters) {
-        s.chapters.sort((a, b) => {
-          const dateA = new Date(a.publishDate).getTime();
-          const dateB = new Date(b.publishDate).getTime();
-          return dateB - dateA; // Descending order
-        });
+        s.chapters.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
       }
     });
 
-    // Sort series by their most recent chapter publish date
-    series.sort((a, b) => {
-      const aLatest = a.chapters?.[0]?.publishDate
-        ? new Date(a.chapters[0].publishDate).getTime()
-        : 0;
-      const bLatest = b.chapters?.[0]?.publishDate
-        ? new Date(b.chapters[0].publishDate).getTime()
-        : 0;
-      return bLatest - aLatest;
-    });
-
-    return series;
+    return orderedSeries;
   }
 
   async getPopularTodaySeries(limit: number = 6) {
