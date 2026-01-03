@@ -241,10 +241,10 @@ export class SeriesService extends BaseService {
     limit: number = 20,
     userId?: string,
   ) {
-    // Get series with relations
+    // Get series with relations including bookmarks and likes for counts
     const series = await this.repo.findOne({
       where: { slug, isVisible: true },
-      relations: ["categories", "ratings"],
+      relations: ["categories", "ratings", "bookmarks", "likes", "chapters"],
     });
 
     if (!series) {

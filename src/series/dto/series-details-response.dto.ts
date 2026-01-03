@@ -77,6 +77,31 @@ export class SeriesDetailsResponseDto {
   totalRatings: number;
 
   @Expose()
+  @Transform(({ obj }) => {
+    // Calculate total views (sum of all chapter readCount)
+    const chapters = obj?.chapters || [];
+    return chapters.reduce(
+      (sum: number, chapter: any) => sum + Number(chapter.readCount || 0),
+      0,
+    );
+  })
+  totalViews: number;
+
+  @Expose()
+  @Transform(({ obj }) => {
+    // Count total bookmarks
+    return obj?.bookmarks?.length || 0;
+  })
+  totalBookmarks: number;
+
+  @Expose()
+  @Transform(({ obj }) => {
+    // Count total likes
+    return obj?.likes?.length || 0;
+  })
+  totalLikes: number;
+
+  @Expose()
   chapters: SeriesDetailsChapterDto[];
 
   @Expose()

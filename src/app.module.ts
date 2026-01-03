@@ -18,7 +18,8 @@ import { FileReaderModule } from "./file-reader/file-reader.module";
 import { CommentModule } from "./comment/comment.module";
 import { SeriesModule } from "./series/series.module";
 import { BookmarkModule } from "./bookmark/bookmark.module";
-import { PaymentModule } from './payment/payment.module';
+import { LikeModule } from "./like/like.module";
+import { PaymentModule } from "./payment/payment.module";
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PaymentModule } from './payment/payment.module';
     CommentModule,
     SeriesModule,
     BookmarkModule,
+    LikeModule,
     PaymentModule,
   ],
   controllers: [AppController],

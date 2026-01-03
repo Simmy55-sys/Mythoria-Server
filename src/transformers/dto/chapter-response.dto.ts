@@ -27,4 +27,7 @@ export class ChapterResponseDto {
 
   @Expose()
   fileUrl?: string;
+
+  @Expose()
+  readCount: number;
 }

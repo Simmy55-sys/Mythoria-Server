@@ -15,6 +15,7 @@ import { TranslatorAssignment } from "./series-translator-assignment.entity";
 import { Comment } from "./comment.entity";
 import { Rating } from "./rating.entity";
 import { Bookmark } from "./bookmark.entity";
+import { Like } from "./like.entity";
 import { SoftDeletableEntity } from "src/interface/model/soft-deletable.entity";
 
 @Entity("series")
@@ -75,4 +76,7 @@ export class Series extends SoftDeletableEntity {
 
   @OneToMany(() => Bookmark, (b) => b.series)
   bookmarks: Bookmark[];
+
+  @OneToMany(() => Like, (l) => l.series)
+  likes: Like[];
 }
