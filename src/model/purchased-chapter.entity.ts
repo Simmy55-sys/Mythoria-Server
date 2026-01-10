@@ -2,6 +2,7 @@ import { BaseEntity } from "src/interface/model/base.entity";
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { Chapter } from "./chapter.entity";
 import { User } from "./user.entity";
+import { resolveDbType } from "src/utils/db-parse-column";
 
 @Entity("purchased_chapters")
 export class PurchasedChapter extends BaseEntity {
@@ -21,6 +22,10 @@ export class PurchasedChapter extends BaseEntity {
   @JoinColumn({ name: "chapter_id" })
   chapter: Chapter;
 
-  @Column({ name: "purchase_date", type: "date" })
+  @Column({
+    type: resolveDbType("timestamptz"),
+    name: "purchase_date",
+    nullable: true,
+  })
   purchaseDate: Date;
 }

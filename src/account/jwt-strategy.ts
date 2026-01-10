@@ -10,9 +10,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        // First try to extract from cookie
+        // First try to extract from role-specific cookies
         (request: Request) => {
-          return request?.cookies?.accessToken || null;
+          return (
+            request?.cookies?.adminAccessToken ||
+            request?.cookies?.readerAccessToken ||
+            request?.cookies?.accessToken || // Fallback for backward compatibility
+            null
+          );
         },
         // Fallback to Authorization header
         ExtractJwt.fromAuthHeaderAsBearerToken(),

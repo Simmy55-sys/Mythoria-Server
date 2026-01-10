@@ -124,7 +124,7 @@ export class AccountController {
     );
 
     // Set JWT token as HTTP-only cookie
-    response.cookie("accessToken", accessToken, {
+    response.cookie("adminAccessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -157,13 +157,22 @@ export class AccountController {
   @Post("logout")
   @HttpCode(200)
   async logout(@Res({ passthrough: true }) response: Response) {
-    // Clear the access token cookie (no auth required to clear cookie)
-    response.clearCookie("accessToken", {
+    // Clear all possible access token cookies (no auth required to clear cookies)
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
-    });
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".mythoriatales.com"
+          : "localhost",
+    };
+
+    response.clearCookie("readerAccessToken", cookieOptions);
+    response.clearCookie("adminAccessToken", cookieOptions);
+    response.clearCookie("accessToken", cookieOptions); // Fallback for backward compatibility
+
     return { message: "Logged out successfully" };
   }
 }

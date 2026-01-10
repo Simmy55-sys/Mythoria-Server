@@ -9,12 +9,22 @@ import { AccountModule } from "src/account/account.module";
 import { CategoryModule } from "src/category/category.module";
 import { Series } from "src/model/series.entity";
 import { Chapter } from "src/model/chapter.entity";
+import { User } from "src/model/user.entity";
+import { CoinPurchase } from "src/model/coin-purchase.entity";
+import { PurchasedChapter } from "src/model/purchased-chapter.entity";
 
 @Module({
   imports: [
     UserModule,
     EmailModule,
-    TypeOrmModule.forFeature([TranslatorAssignment, Series, Chapter]),
+    TypeOrmModule.forFeature([
+      TranslatorAssignment,
+      Series,
+      Chapter,
+      User,
+      CoinPurchase,
+      PurchasedChapter,
+    ]),
     AccountModule,
     CategoryModule,
   ],

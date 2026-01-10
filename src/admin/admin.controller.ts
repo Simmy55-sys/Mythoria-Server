@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { AdminService } from "./admin.service";
@@ -89,5 +90,44 @@ export class AdminController {
   @HttpCode(200)
   async deleteSeries(@Param("id") id: string) {
     return await this.adminService.deleteSeries(id);
+  }
+
+  @Get("series/:id/chapters")
+  async getSeriesChapters(@Param("id") id: string) {
+    return await this.adminService.getSeriesChapters(id);
+  }
+
+  @Get("chapters/:id")
+  async getChapterContent(@Param("id") id: string) {
+    return await this.adminService.getChapterContent(id);
+  }
+
+  @Patch("chapters/:id/toggle-premium")
+  @HttpCode(200)
+  async toggleChapterPremium(@Param("id") id: string) {
+    return await this.adminService.toggleChapterPremium(id);
+  }
+
+  @Delete("chapters/:id")
+  @HttpCode(200)
+  async deleteChapter(@Param("id") id: string) {
+    return await this.adminService.deleteChapter(id);
+  }
+
+  @Get("statistics")
+  async getStatistics() {
+    return await this.adminService.getStatistics();
+  }
+
+  @Get("recent-purchases")
+  async getRecentPurchases(@Query("limit") limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return await this.adminService.getRecentPurchasedChapters(limitNum);
+  }
+
+  @Get("recent-coin-purchases")
+  async getRecentCoinPurchases(@Query("limit") limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return await this.adminService.getRecentCoinPurchases(limitNum);
   }
 }

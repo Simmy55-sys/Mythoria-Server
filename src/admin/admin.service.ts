@@ -16,6 +16,9 @@ import { AccountService } from "src/account/account.service";
 import { ulid } from "ulid";
 import { Series } from "src/model/series.entity";
 import { Chapter } from "src/model/chapter.entity";
+import { User } from "src/model/user.entity";
+import { CoinPurchase } from "src/model/coin-purchase.entity";
+import { PurchasedChapter } from "src/model/purchased-chapter.entity";
 
 @Injectable()
 export class AdminService extends BaseService {
@@ -29,6 +32,12 @@ export class AdminService extends BaseService {
     private seriesRepo: Repository<Series>,
     @InjectRepository(Chapter)
     private chapterRepo: Repository<Chapter>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(CoinPurchase)
+    private coinPurchaseRepo: Repository<CoinPurchase>,
+    @InjectRepository(PurchasedChapter)
+    private purchasedChapterRepo: Repository<PurchasedChapter>,
   ) {
     super();
   }
@@ -214,5 +223,176 @@ export class AdminService extends BaseService {
     await this.seriesRepo.softRemove(series);
 
     return { message: "Series deleted successfully" };
+  }
+
+  async getSeriesChapters(seriesId: string) {
+    const series = await this.seriesRepo.findOne({
+      where: { id: seriesId },
+    });
+
+    if (!series) {
+      throw new NotFoundException("Series not found");
+    }
+
+    const chapters = await this.chapterRepo.find({
+      where: { seriesId },
+      order: { chapterNumber: "DESC" },
+    });
+
+    return chapters.map((chapter) => ({
+      id: chapter.id,
+      title: chapter.title,
+      chapterNumber: chapter.chapterNumber,
+      isPremium: chapter.isPremium,
+      publishDate: chapter.publishDate.toISOString(),
+      language: chapter.language,
+      priceInCoins: chapter.priceInCoins || 20,
+      readCount: Number(chapter.readCount),
+      content: chapter.content,
+      notes: chapter.notes || undefined,
+    }));
+  }
+
+  async getChapterContent(chapterId: string) {
+    const chapter = await this.chapterRepo.findOne({
+      where: { id: chapterId },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException("Chapter not found");
+    }
+
+    return {
+      id: chapter.id,
+      title: chapter.title,
+      chapterNumber: chapter.chapterNumber,
+      isPremium: chapter.isPremium,
+      publishDate: chapter.publishDate.toISOString(),
+      language: chapter.language,
+      priceInCoins: chapter.priceInCoins || 20,
+      readCount: Number(chapter.readCount),
+      content: chapter.content,
+      notes: chapter.notes || undefined,
+    };
+  }
+
+  async toggleChapterPremium(chapterId: string) {
+    const chapter = await this.chapterRepo.findOne({
+      where: { id: chapterId },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException("Chapter not found");
+    }
+
+    chapter.isPremium = !chapter.isPremium;
+    await this.chapterRepo.save(chapter);
+
+    return {
+      message: `Chapter ${chapter.isPremium ? "set to premium" : "set to free"}`,
+    };
+  }
+
+  async deleteChapter(chapterId: string) {
+    const chapter = await this.chapterRepo.findOne({
+      where: { id: chapterId },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException("Chapter not found");
+    }
+
+    await this.chapterRepo.softRemove(chapter);
+
+    return { message: "Chapter deleted successfully" };
+  }
+
+  async getStatistics() {
+    // Get total novels (non-deleted series)
+    const totalNovels = await this.seriesRepo.count({
+      where: { deletedAt: IsNull() },
+    });
+
+    // Get total chapters (non-deleted)
+    const totalChapters = await this.chapterRepo.count({
+      where: { deletedAt: IsNull() },
+    });
+
+    // Get total translators (active)
+    const totalTranslators = await this.userRepo.count({
+      where: { role: Role.TRANSLATOR, deletedAt: IsNull() },
+    });
+
+    // Get total users (readers, active)
+    const totalUsers = await this.userRepo.count({
+      where: { role: Role.READER, deletedAt: IsNull() },
+    });
+
+    // Get coins purchased this month (completed purchases)
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const coinPurchasesThisMonth = await this.coinPurchaseRepo
+      .createQueryBuilder("coinPurchase")
+      .select("SUM(coinPurchase.coinAmount)", "total")
+      .where("coinPurchase.status = :status", { status: "completed" })
+      .andWhere("coinPurchase.purchaseDate >= :startDate", {
+        startDate: startOfMonth,
+      })
+      .getRawOne();
+
+    const coinsPurchasedThisMonth = coinPurchasesThisMonth?.total
+      ? parseInt(coinPurchasesThisMonth.total)
+      : 0;
+
+    return {
+      totalNovels,
+      totalChapters,
+      totalTranslators,
+      totalUsers,
+      coinsPurchasedThisMonth,
+    };
+  }
+
+  async getRecentPurchasedChapters(limit: number = 10) {
+    const purchases = await this.purchasedChapterRepo.find({
+      relations: ["user", "chapter", "chapter.series"],
+      order: {
+        purchaseDate: "DESC",
+        createdAt: "DESC",
+      },
+      take: limit,
+    });
+
+    return purchases.map((purchase) => ({
+      id: purchase.id,
+      novel: purchase.chapter?.series?.title || "Unknown",
+      chapter: purchase.chapter?.title || "Unknown",
+      purchasedBy: purchase.user?.username || "Unknown",
+      coinsSpent: purchase.chapter?.priceInCoins || 0,
+      date: purchase.createdAt.toISOString().split("T")[0],
+    }));
+  }
+
+  async getRecentCoinPurchases(limit: number = 10) {
+    const purchases = await this.coinPurchaseRepo.find({
+      relations: ["user"],
+      order: {
+        purchaseDate: "DESC",
+        createdAt: "DESC",
+      },
+      take: limit,
+    });
+
+    return purchases.map((purchase) => ({
+      id: purchase.id,
+      user: purchase.user?.username || "Unknown",
+      packageName: `${purchase.coinAmount} Coins`,
+      coinsAmount: purchase.coinAmount,
+      amountPaid: `$${Number(purchase.amountPaid).toFixed(2)}`,
+      date: purchase.purchaseDate.toISOString().split("T")[0],
+      status: purchase.status,
+    }));
   }
 }

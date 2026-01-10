@@ -20,6 +20,7 @@ import { SeriesModule } from "./series/series.module";
 import { BookmarkModule } from "./bookmark/bookmark.module";
 import { LikeModule } from "./like/like.module";
 import { PaymentModule } from "./payment/payment.module";
+import { AnnouncementModule } from './announcement/announcement.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { PaymentModule } from "./payment/payment.module";
     BookmarkModule,
     LikeModule,
     PaymentModule,
+    AnnouncementModule,
   ],
   controllers: [AppController],
   providers: [AppService],
