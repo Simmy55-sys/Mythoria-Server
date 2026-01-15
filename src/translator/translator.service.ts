@@ -359,7 +359,7 @@ export class TranslatorService extends BaseService {
     }, 0);
 
     // Convert coins to dollars (assuming 1 coin = $0.01, adjust as needed)
-    const revenueInDollars = revenue * 0.01;
+    const revenueInDollars = revenue * 0.05;
 
     // Get comment count for translator's series or chapters (only approved comments)
     // Comments can be on series OR chapters, so we need to count both
@@ -463,7 +463,7 @@ export class TranslatorService extends BaseService {
     const chaptersWithStats = chapters.map((chapter) => {
       const purchaseCount = purchaseCountMap.get(chapter.id) || 0;
       const revenueInCoins = purchaseCount * (chapter.priceInCoins || 0);
-      const revenueInDollars = revenueInCoins * 0.01;
+      const revenueInDollars = revenueInCoins * 0.05;
 
       return {
         id: chapter.id,
@@ -531,7 +531,7 @@ export class TranslatorService extends BaseService {
     // Transform to response format
     return purchases.map((purchase) => {
       const priceInCoins = purchase.chapter?.priceInCoins || 0;
-      const revenueInDollars = priceInCoins * 0.01;
+      const revenueInDollars = priceInCoins * 0.05;
 
       return {
         id: purchase.id,
@@ -603,7 +603,7 @@ export class TranslatorService extends BaseService {
     // Calculate revenue for each purchase
     const purchasesWithRevenue = allPurchases.map((purchase) => {
       const priceInCoins = purchase.chapter?.priceInCoins || 0;
-      const revenueInDollars = priceInCoins * 0.01;
+      const revenueInDollars = priceInCoins * 0.05;
       return {
         ...purchase,
         revenue: revenueInDollars,
