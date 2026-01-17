@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { PasswordService } from "src/password/password.service";
 import { UserService } from "src/user/user.service";
+import { EmailService } from "src/email/email.service";
 import { EntityManager } from "typeorm";
 import { LoginDto } from "./dto/login.dto";
 import { JwtService } from "@nestjs/jwt";
@@ -38,6 +39,7 @@ export class AccountService {
     private passwordService: PasswordService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
     @InjectRepository(PasswordResetToken)
     private passwordResetTokenRepo: Repository<PasswordResetToken>,
   ) {}
@@ -384,10 +386,6 @@ export class AccountService {
 
     // Don't reveal if user exists or not (security best practice)
     if (!user) {
-      // Log for debugging (in production, you'd still return success)
-      console.log(
-        `Password reset requested for email: ${dto.email}, role: ${role} - User not found or uses OAuth`,
-      );
       return {
         message: "If the email exists, a password reset link has been sent.",
       };
@@ -418,17 +416,25 @@ export class AccountService {
       resetToken,
     );
 
-    // Log the reset link (instead of sending email)
-    // Use different paths based on role
+    // Build reset URL based on role
     let baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
     if (role === Role.TRANSLATOR)
       baseUrl = this.configService.getOrThrow<string>(TRANSLATOR_BASE_URL);
-    const resetPath =
-      role === Role.TRANSLATOR
-        ? "/account/reset-password"
-        : "/account/reset-password";
+    const resetPath = "/account/reset-password";
     const resetUrl = `${baseUrl}${resetPath}?token=${token}`;
-    console.log(`Password reset link for ${dto.email} (${role}): ${resetUrl}`);
+
+    // Send password reset email
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        user.email,
+        resetUrl,
+        role === Role.TRANSLATOR ? "translator" : "reader",
+      );
+    } catch (error) {
+      // Log error but don't reveal to user (security best practice)
+      console.error("Failed to send password reset email:", error);
+      // Still return success message to prevent email enumeration
+    }
 
     return {
       message: "If the email exists, a password reset link has been sent.",
