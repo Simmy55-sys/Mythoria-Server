@@ -7,11 +7,14 @@ import { JwtStrategy } from "./jwt-strategy";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JWT_SECRET } from "src/config/env";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { PasswordResetToken } from "src/model/password-reset-token.entity";
 
 @Module({
   imports: [
     UserModule,
     PasswordModule,
+    TypeOrmModule.forFeature([PasswordResetToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -55,7 +55,7 @@ export class AdminService extends BaseService {
     await this.emailService.sendAccountCreatedByAdmin({
       username: translator.username,
       email: translator.email,
-      password: translator.password,
+      password: translator.password ?? "",
     });
 
     // Return translator with password for admin to share
@@ -370,7 +370,7 @@ export class AdminService extends BaseService {
       novel: purchase.chapter?.series?.title || "Unknown",
       chapter: purchase.chapter?.title || "Unknown",
       purchasedBy: purchase.user?.username || "Unknown",
-      coinsSpent: purchase.chapter?.priceInCoins || 0,
+      coinsSpent: purchase.price || 0,
       date: purchase.createdAt.toISOString().split("T")[0],
     }));
   }

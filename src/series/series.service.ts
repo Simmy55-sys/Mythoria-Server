@@ -11,7 +11,13 @@ import { Category } from "src/model/category.entity";
 import { Chapter } from "src/model/chapter.entity";
 import { Rating } from "src/model/rating.entity";
 import { PurchasedChapter } from "src/model/purchased-chapter.entity";
-import { Repository, In, MoreThanOrEqual, ILike } from "typeorm";
+import {
+  Repository,
+  In,
+  MoreThanOrEqual,
+  ILike,
+  LessThanOrEqual,
+} from "typeorm";
 import BaseService from "src/interface/service/base.service";
 
 @Injectable()
@@ -34,14 +40,17 @@ export class SeriesService extends BaseService {
   }
 
   async getLatestSeries(limit: number = 12) {
-    // Subquery to get the latest chapter createdAt for each series
+    // Subquery to get the latest chapter publishDate for each series
+    // Only consider chapters where publishDate is less than or equal to now
+    const now = new Date();
     const seriesWithLatestChapter = await this.repo
       .createQueryBuilder("series")
       .leftJoin("series.chapters", "chapters")
       .select("series.id", "seriesId")
-      .addSelect("MAX(chapters.createdAt)", "last_chapter_date")
+      .addSelect("MAX(chapters.publishDate)", "last_chapter_date")
       .where("series.isVisible = :isVisible", { isVisible: true })
       .andWhere("chapters.id IS NOT NULL")
+      .andWhere("chapters.publishDate <= :now", { now })
       .groupBy("series.id")
       .orderBy("last_chapter_date", "DESC")
       .limit(limit)
@@ -65,12 +74,16 @@ export class SeriesService extends BaseService {
       .map((id) => seriesMap.get(id))
       .filter((s): s is NonNullable<typeof s> => s !== undefined);
 
-    // Sort chapters within each series by createdAt (descending)
+    // Filter out future-dated chapters and sort by publishDate (descending)
     orderedSeries.forEach((s) => {
       if (s.chapters) {
+        // Filter out future-dated chapters
+        s.chapters = s.chapters.filter((chapter) => chapter.publishDate <= now);
+        // Sort by publish date (descending)
         s.chapters.sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            new Date(b.publishDate).getTime() -
+            new Date(a.publishDate).getTime(),
         );
       }
     });
@@ -215,12 +228,17 @@ export class SeriesService extends BaseService {
       .take(limit)
       .getMany();
 
-    // Sort chapters within each series by publish date (descending)
+    // Filter and sort chapters within each series by publish date (descending)
+    // Only include chapters where publishDate is less than or equal to now
+    const now = new Date();
     series.forEach((s) => {
       if (s.chapters) {
+        // Filter out future-dated chapters
+        s.chapters = s.chapters.filter((chapter) => chapter.publishDate <= now);
+        // Sort by publish date (descending)
         s.chapters.sort((a, b) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
+          const dateA = new Date(a.publishDate).getTime();
+          const dateB = new Date(b.publishDate).getTime();
           return dateB - dateA; // Descending order
         });
       }
@@ -251,10 +269,22 @@ export class SeriesService extends BaseService {
       throw new NotFoundException("Series not found");
     }
 
-    // Get paginated chapters
+    // Get paginated chapters - only return chapters where publishDate is less than or equal to now
     const skip = (page - 1) * limit;
+    const now = new Date();
+
+    // Filter chapters in series relation to exclude future-dated chapters
+    if (series.chapters) {
+      series.chapters = series.chapters.filter(
+        (chapter) => chapter.publishDate <= now,
+      );
+    }
+
     const [chapters, totalChapters] = await this.chapterRepo.findAndCount({
-      where: { seriesId: series.id },
+      where: {
+        seriesId: series.id,
+        publishDate: LessThanOrEqual(now),
+      },
       order: { chapterNumber: "DESC" },
       skip,
       take: limit,

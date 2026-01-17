@@ -26,8 +26,16 @@ export class User extends SoftDeletableEntity {
   @Column()
   email: string;
 
-  @Column()
-  password: string; // store hashed password
+  @Column({ type: "text", nullable: true })
+  password: string | null; // store hashed password (nullable for OAuth users)
+
+  @Column({
+    type: "enum",
+    enum: ["email", "discord", "google"],
+    default: "email",
+    name: "auth_type",
+  })
+  authType: "email" | "discord" | "google";
 
   @Column({ type: "enum", enum: Role, default: Role.READER })
   role: Role;

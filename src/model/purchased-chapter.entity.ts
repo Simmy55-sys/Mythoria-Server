@@ -28,4 +28,12 @@ export class PurchasedChapter extends BaseEntity {
     nullable: true,
   })
   purchaseDate: Date;
+
+  @Column({
+    type: resolveDbType("integer"),
+    name: "price",
+    nullable: false,
+    default: 0,
+  })
+  price: number;
 }

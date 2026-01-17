@@ -17,7 +17,29 @@ export class UserService extends BaseService {
 
   async create(createDto: CreateUserDto, transactionalEntity?: EntityManager) {
     const hashed = await this.passwordService.hashPassword(createDto.password);
-    const user = this.usersRepo.create({ ...createDto, password: hashed });
+    const user = this.usersRepo.create({
+      ...createDto,
+      password: hashed,
+      authType: "email",
+    });
+    return this.performEntityOps<User, User>({
+      repositoryManager: this.usersRepo,
+      transactionalEntity,
+      action: "save",
+      opsArgs: [user],
+    });
+  }
+
+  async createOauthUser(
+    createDto: Omit<CreateUserDto, "password"> & {
+      authType: "discord" | "google";
+    },
+    transactionalEntity?: EntityManager,
+  ) {
+    const user = this.usersRepo.create({
+      ...createDto,
+      authType: createDto.authType,
+    });
     return this.performEntityOps<User, User>({
       repositoryManager: this.usersRepo,
       transactionalEntity,

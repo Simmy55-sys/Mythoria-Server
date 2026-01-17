@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
 import { Chapter } from "src/model/chapter.entity";
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, Repository, LessThanOrEqual } from "typeorm";
 import { CreateChapterDto } from "./dto/create-chapter.dto";
 import BaseService from "src/interface/service/base.service";
 import { UpdateChapterDto } from "./dto/update-chapter.dto";
@@ -220,6 +220,12 @@ export class ChapterService extends BaseService {
       throw new NotFoundException("Chapter not found");
     }
 
+    // Check if chapter is locked (publish date is in the future)
+    const now = new Date();
+    if (chapter.publishDate > now) {
+      throw new NotFoundException("Chapter not found");
+    }
+
     // Track read and increment counter
     await this.trackChapterRead(chapter.id, userId, sessionId);
 
@@ -228,12 +234,13 @@ export class ChapterService extends BaseService {
       chapter.isPremium = false;
     }
 
-    // Get next and previous chapters
+    // Get next and previous chapters - only return chapters where publishDate is less than or equal to now
     const [prevChapter, nextChapter] = await Promise.all([
       this.repo.findOne({
         where: {
           seriesId: series.id,
           chapterNumber: chapterNumber - 1,
+          publishDate: LessThanOrEqual(now),
         },
         order: { chapterNumber: "DESC" },
       }),
@@ -241,6 +248,7 @@ export class ChapterService extends BaseService {
         where: {
           seriesId: series.id,
           chapterNumber: chapterNumber + 1,
+          publishDate: LessThanOrEqual(now),
         },
         order: { chapterNumber: "ASC" },
       }),
@@ -463,11 +471,12 @@ export class ChapterService extends BaseService {
       user.coinBalance -= priceInCoins;
       await transactionalEntity.save(User, user);
 
-      // Create purchase record
+      // Create purchase record with price at purchase time
       const purchasedChapter = this.purchasedChapterRepo.create({
         userId,
         chapterId,
         purchaseDate: new Date(),
+        price: priceInCoins,
       });
 
       const savedPurchase = await this.performEntityOps<
@@ -509,11 +518,14 @@ export class ChapterService extends BaseService {
 
   async getLatestChapters(limit: number = 10) {
     // Get latest chapters from visible series, ordered by publish date
+    // Only return chapters where publishDate is less than or equal to now
+    const now = new Date();
     const chapters = await this.repo
       .createQueryBuilder("chapter")
       .leftJoinAndSelect("chapter.series", "series")
       .leftJoinAndSelect("series.categories", "categories")
       .where("series.isVisible = :isVisible", { isVisible: true })
+      .andWhere("chapter.publishDate <= :now", { now })
       .orderBy("chapter.publishDate", "DESC")
       .addOrderBy("chapter.createdAt", "DESC")
       .take(limit)

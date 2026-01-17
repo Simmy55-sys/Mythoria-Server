@@ -444,25 +444,28 @@ export class TranslatorService extends BaseService {
       return [];
     }
 
-    // Get purchase counts for each chapter
-    const purchaseCounts = await this.purchasedChapterRepo
+    // Get purchase counts and total revenue for each chapter using actual purchase prices
+    const purchaseStats = await this.purchasedChapterRepo
       .createQueryBuilder("purchase")
       .select("purchase.chapterId", "chapterId")
       .addSelect("COUNT(purchase.id)", "purchaseCount")
+      .addSelect("SUM(purchase.price)", "totalRevenueInCoins")
       .where("purchase.chapterId IN (:...chapterIds)", { chapterIds })
       .groupBy("purchase.chapterId")
       .getRawMany();
 
-    // Create a map of chapterId -> purchaseCount
+    // Create maps of chapterId -> purchaseCount and totalRevenue
     const purchaseCountMap = new Map<string, number>();
-    purchaseCounts.forEach((pc) => {
-      purchaseCountMap.set(pc.chapterId, parseInt(pc.purchaseCount, 10));
+    const revenueMap = new Map<string, number>();
+    purchaseStats.forEach((ps) => {
+      purchaseCountMap.set(ps.chapterId, parseInt(ps.purchaseCount, 10));
+      revenueMap.set(ps.chapterId, parseFloat(ps.totalRevenueInCoins || 0));
     });
 
-    // Calculate revenue for each chapter (purchaseCount * priceInCoins)
+    // Calculate revenue for each chapter using actual purchase prices
     const chaptersWithStats = chapters.map((chapter) => {
       const purchaseCount = purchaseCountMap.get(chapter.id) || 0;
-      const revenueInCoins = purchaseCount * (chapter.priceInCoins || 0);
+      const revenueInCoins = revenueMap.get(chapter.id) || 0;
       const revenueInDollars = revenueInCoins * 0.05;
 
       return {
@@ -530,7 +533,8 @@ export class TranslatorService extends BaseService {
 
     // Transform to response format
     return purchases.map((purchase) => {
-      const priceInCoins = purchase.chapter?.priceInCoins || 0;
+      // Use the price stored at purchase time, not the current chapter price
+      const priceInCoins = purchase.price || 0;
       const revenueInDollars = priceInCoins * 0.05;
 
       return {
@@ -600,9 +604,9 @@ export class TranslatorService extends BaseService {
       .withDeleted() // Include soft-deleted chapters
       .getMany();
 
-    // Calculate revenue for each purchase
+    // Calculate revenue for each purchase using the price stored at purchase time
     const purchasesWithRevenue = allPurchases.map((purchase) => {
-      const priceInCoins = purchase.chapter?.priceInCoins || 0;
+      const priceInCoins = purchase.price || 0;
       const revenueInDollars = priceInCoins * 0.05;
       return {
         ...purchase,
