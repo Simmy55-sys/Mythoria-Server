@@ -40,7 +40,7 @@ export class User extends SoftDeletableEntity {
   @Column({ type: "enum", enum: Role, default: Role.READER })
   role: Role;
 
-  @Column({ type: "int", default: 50, name: "coin_balance" })
+  @Column({ type: "int", default: 0, name: "coin_balance" })
   coinBalance: number;
 
   @OneToMany(() => TranslatorAssignment, (t) => t.translator)
