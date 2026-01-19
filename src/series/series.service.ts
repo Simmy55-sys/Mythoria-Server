@@ -82,8 +82,8 @@ export class SeriesService extends BaseService {
         // Sort by publish date (descending)
         s.chapters.sort(
           (a, b) =>
-            new Date(b.publishDate).getTime() -
-            new Date(a.publishDate).getTime(),
+            b.chapterNumber -
+            a.chapterNumber,
         );
       }
     });

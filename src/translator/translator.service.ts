@@ -354,7 +354,7 @@ export class TranslatorService extends BaseService {
 
     // Calculate revenue (sum of chapter prices from the chapter relation)
     const revenue = recentPurchases.reduce((sum, purchase) => {
-      const priceInCoins = purchase.chapter?.priceInCoins || 0;
+      const priceInCoins = purchase.price || 0;
       return sum + priceInCoins;
     }, 0);
 

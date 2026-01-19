@@ -29,7 +29,7 @@ export class SeriesController {
 
   @Get("public/latest")
   async getLatestSeries(@Query("limit") limit?: string) {
-    const limitNum = limit ? parseInt(limit, 10) : 12;
+    const limitNum = limit ? parseInt(limit, 10) : 5;
     const series = await this.seriesService.getLatestSeries(limitNum);
 
     return plainToInstance(LatestSeriesResponseDto, series, {

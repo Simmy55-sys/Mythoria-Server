@@ -378,6 +378,7 @@ export class AdminService extends BaseService {
   async getRecentCoinPurchases(limit: number = 10) {
     const purchases = await this.coinPurchaseRepo.find({
       relations: ["user"],
+      where: {status: "completed"},
       order: {
         purchaseDate: "DESC",
         createdAt: "DESC",

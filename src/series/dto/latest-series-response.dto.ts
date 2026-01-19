@@ -1,4 +1,5 @@
 import { Expose, Transform } from "class-transformer";
+import { Chapter } from "src/model/chapter.entity";
 
 export class LatestSeriesChapterDto {
   @Expose()
@@ -32,10 +33,10 @@ export class LatestSeriesResponseDto {
     // Get the 4 most recent chapters, ordered by publish date
     const chapters = obj.chapters || [];
     const sortedChapters = chapters
-      .sort((a: any, b: any) => {
-        const dateA = new Date(a.publishDate).getTime();
-        const dateB = new Date(b.publishDate).getTime();
-        return dateB - dateA; // Descending order
+      .sort((a: Chapter, b: Chapter) => {
+        const chptA = a.chapterNumber;
+        const chptB = b.chapterNumber;
+        return chptB - chptA; // Descending order
       })
       .slice(0, 4); // Get top 4
 
