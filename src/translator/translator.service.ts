@@ -708,4 +708,15 @@ export class TranslatorService extends BaseService {
       totalEarnings: Math.round(totalEarnings * 100) / 100,
     };
   }
+
+  async uploadImage(file: Express.Multer.File) {
+    const uploadResult = await this.cloudinaryService.uploadFile(
+      file,
+      "chapter-images",
+    );
+    if (!uploadResult) {
+      throw new BadRequestException("Failed to upload image");
+    }
+    return uploadResult;
+  }
 }

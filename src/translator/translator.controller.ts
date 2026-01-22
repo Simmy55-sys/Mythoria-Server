@@ -223,4 +223,22 @@ export class TranslatorController {
       : undefined;
     return this.translatorService.getEarningsData(user?.id ?? "", year);
   }
+
+  @Post("upload-image")
+  @UseGuards(IsAuthenticated, IsTranslator)
+  @UseInterceptors(FileInterceptor("image"))
+  async uploadImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({ fileType: /(image)\/(jpeg|png|gif|webp)/ }),
+        ],
+      }),
+    )
+    image: Express.Multer.File,
+  ) {
+    const uploadResult = await this.translatorService.uploadImage(image);
+    return { url: uploadResult.secure_url };
+  }
 }
