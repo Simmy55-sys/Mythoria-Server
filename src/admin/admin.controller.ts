@@ -70,8 +70,35 @@ export class AdminController {
   }
 
   @Get("series")
-  async getSeries() {
-    return await this.adminService.getSeries();
+  async getSeries(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("status") status?: string,
+    @Query("translator") translator?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+
+    const filters: {
+      search?: string;
+      status?: string[];
+      translator?: string;
+    } = {};
+
+    if (search) {
+      filters.search = search.trim();
+    }
+
+    if (status) {
+      filters.status = status.split(",");
+    }
+
+    if (translator) {
+      filters.translator = translator.trim();
+    }
+
+    return await this.adminService.getSeries(pageNum, limitNum, filters);
   }
 
   @Patch("translators/:id/toggle-status")

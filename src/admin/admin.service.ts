@@ -131,10 +131,75 @@ export class AdminService extends BaseService {
     return translatorsWithStats;
   }
 
-  async getSeries() {
-    const series = await this.seriesRepo.find({
-      relations: ["categories", "chapters"],
-    });
+  async getSeries(
+    page: number = 1,
+    limit: number = 10,
+    filters?: {
+      search?: string;
+      status?: string[];
+      translator?: string;
+    },
+  ) {
+    const queryBuilder = this.seriesRepo
+      .createQueryBuilder("series")
+      .leftJoinAndSelect("series.categories", "categories")
+      .leftJoinAndSelect("series.chapters", "chapters");
+
+    // Apply search filter
+    if (filters?.search) {
+      queryBuilder.andWhere("series.title ILIKE :search", {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    // Apply status filter
+    if (filters?.status && filters.status.length > 0) {
+      queryBuilder.andWhere("series.status IN (:...statuses)", {
+        statuses: filters.status,
+      });
+    }
+
+    // Apply translator filter
+    if (filters?.translator) {
+      // First, find translator assignments that match the translator username
+      const translatorUsers = await this.userRepo.find({
+        where: {
+          username: filters.translator,
+          role: Role.TRANSLATOR,
+        },
+      });
+
+      if (translatorUsers.length > 0) {
+        const translatorIds = translatorUsers.map((u) => u.id);
+        const matchingAssignments = await this.translatorAssignmentRepo.find({
+          where: { translator: { id: In(translatorIds) } },
+        });
+        const assignmentIds = matchingAssignments.map((a) => a.id);
+
+        if (assignmentIds.length > 0) {
+          queryBuilder.andWhere("series.assignmentId IN (:...assignmentIds)", {
+            assignmentIds,
+          });
+        } else {
+          // No matching assignments, return empty result
+          queryBuilder.andWhere("1 = 0");
+        }
+      } else {
+        // No matching translator, return empty result
+        queryBuilder.andWhere("1 = 0");
+      }
+    }
+
+    // Get total count before pagination
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination
+    const skip = (page - 1) * limit;
+    const series = await queryBuilder
+      .orderBy("series.createdAt", "DESC")
+      .skip(skip)
+      .take(limit)
+      .getMany();
 
     // Get assignments separately to get translator info
     const assignmentIds = series.map((s) => s.assignmentId).filter(Boolean);
@@ -148,7 +213,7 @@ export class AdminService extends BaseService {
 
     const assignmentMap = new Map(assignments.map((a) => [a.id, a]));
 
-    return series.map((s) => {
+    const data = series.map((s) => {
       const assignment = s.assignmentId
         ? assignmentMap.get(s.assignmentId)
         : null;
@@ -162,6 +227,16 @@ export class AdminService extends BaseService {
         categories: s.categories?.map((c) => c.name) || [],
       };
     });
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async toggleTranslatorStatus(translatorId: string) {
