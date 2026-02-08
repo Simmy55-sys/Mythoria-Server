@@ -98,7 +98,7 @@ export class SeriesCreatedSubscriber {
         { name: "Translator", value: `@${translator}` },
         {
           name: "Start Reading",
-          value: `[Read Chapter 1](https://${this.configService.getOrThrow<string>(CLIENT_BASE_URL)}/series/${slug})`,
+          value: `[Read Chapter 1](${this.configService.getOrThrow<string>(CLIENT_BASE_URL)}/series/${slug})`,
         },
         {
           name: "📌 Series update notifications",

@@ -288,9 +288,21 @@ export class TranslatorController {
     @Param("id") id: string,
     @Body() dto: UpdateChapterDto,
   ) {
-    return chapterResponseTransformer(
-      await this.chapterService.updateChapter(seriesId, id, dto),
+    const previous = await this.chapterService.findOne(seriesId, id);
+    const updatedChapter = await this.chapterService.updateChapter(
+      seriesId,
+      id,
+      dto,
     );
+
+    if (previous?.isPremium && !updatedChapter.isPremium) {
+      this.eventEmitter.emit(events.chapter.madeFree, {
+        chapter: updatedChapter,
+        seriesId,
+      });
+    }
+
+    return chapterResponseTransformer(updatedChapter);
   }
 
   @Delete("series/chapter/:seriesId/:id")

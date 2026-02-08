@@ -61,7 +61,7 @@ export class ChapterBulkCreatedSubscriber {
 
     const { slug, title: seriesTitle, channelColor } = series;
     const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
-    const seriesUrl = `https://${baseUrl}/series/${slug}`;
+    const seriesUrl = `${baseUrl}/series/${slug}`;
     const color = channelColor ? parseInt(channelColor, 10) : 0x5865f2;
 
     const sorted = [...chapters].sort(

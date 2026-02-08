@@ -4,6 +4,6 @@ export default {
     timeWindow: 5,
     slowMode: 30,
   },
-  generalChannel: "1459329950887710986",
-  seriesUpdateChannel: "1469968730011467882",
+  generalChannel: "1448734804484030660",
+  seriesUpdateChannel: "1470117339730153665",
 };

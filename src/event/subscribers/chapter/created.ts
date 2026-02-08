@@ -58,8 +58,8 @@ export class ChapterCreatedSubscriber {
 
     const { slug, title: seriesTitle, channelColor } = series;
     const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
-    const chapterUrl = `https://${baseUrl}/series/${slug}/chapter/${chapter.id}`;
-    const seriesUrl = `https://${baseUrl}/series/${slug}`;
+    const chapterUrl = `${baseUrl}/series/${slug}/chapter/${chapter.id}`;
+    const seriesUrl = `${baseUrl}/series/${slug}`;
     const color = channelColor ? parseInt(channelColor, 10) : 0x5865f2;
 
     const embed = new EmbedBuilder()
@@ -77,7 +77,8 @@ export class ChapterCreatedSubscriber {
         },
         {
           name: "Get notified",
-          value: "Use **/subscribe** in this server to opt in for this series, or **/unsubscribe** to stop.",
+          value:
+            "Use **/subscribe** in this server to opt in for this series, or **/unsubscribe** to stop.",
         },
       )
       .setTimestamp();
