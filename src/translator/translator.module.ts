@@ -11,6 +11,8 @@ import { Comment } from "src/model/comment.entity";
 import { Rating } from "src/model/rating.entity";
 import { ChapterModule } from "src/chapter/chapter.module";
 import { CloudinaryModule } from "src/cloudinary/cloudinary.module";
+import { BotModule } from "src/bot/bot.module";
+import { EventModule } from "src/event/event.module";
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { CloudinaryModule } from "src/cloudinary/cloudinary.module";
     ]),
     ChapterModule,
     CloudinaryModule,
+    BotModule,
+    EventModule,
   ],
   providers: [TranslatorService],
   controllers: [TranslatorController],

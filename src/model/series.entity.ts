@@ -45,6 +45,15 @@ export class Series extends SoftDeletableEntity {
   @Column()
   slug: string;
 
+  @Column({ nullable: true })
+  channelId?: string; // channel dicord id for the series on the platform
+
+  @Column({ nullable: true })
+  channelColor?: string; // hex color code for the series channel
+
+  @Column({ nullable: true, name: "role_id" })
+  roleId?: string; // Discord role id for opt-in notifications
+
   @Column({ default: "novel", name: "novel_type" })
   novelType: "novel" | "manga" | "manhwa";
 

@@ -19,6 +19,8 @@ import { Chapter } from "src/model/chapter.entity";
 import { User } from "src/model/user.entity";
 import { CoinPurchase } from "src/model/coin-purchase.entity";
 import { PurchasedChapter } from "src/model/purchased-chapter.entity";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import events from "src/event";
 
 @Injectable()
 export class AdminService extends BaseService {
@@ -26,6 +28,7 @@ export class AdminService extends BaseService {
     private userService: UserService,
     private accountService: AccountService,
     private emailService: EmailService,
+    private eventEmitter: EventEmitter2,
     @InjectRepository(TranslatorAssignment)
     private translatorAssignmentRepo: Repository<TranslatorAssignment>,
     @InjectRepository(Series)
@@ -362,6 +365,13 @@ export class AdminService extends BaseService {
 
     chapter.isPremium = !chapter.isPremium;
     await this.chapterRepo.save(chapter);
+
+    if (!chapter.isPremium) {
+      this.eventEmitter.emit(events.chapter.madeFree, {
+        chapter,
+        seriesId: chapter.seriesId,
+      });
+    }
 
     return {
       message: `Chapter ${chapter.isPremium ? "set to premium" : "set to free"}`,

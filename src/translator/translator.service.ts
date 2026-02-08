@@ -4,16 +4,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import BaseService from "src/interface/service/base.service";
 import { TranslatorAssignment } from "src/model/series-translator-assignment.entity";
-import {
-  EntityManager,
-  In,
-  Repository,
-  MoreThanOrEqual,
-  Or,
-  IsNull,
-} from "typeorm";
+import { EntityManager, In, Repository } from "typeorm";
 import { Series } from "src/model/series.entity";
 import { CreateSeriesDto } from "./dto/create-series.dto";
 import { UpdateSeriesDto } from "./dto/update-series.dto";
@@ -23,6 +17,8 @@ import { PurchasedChapter } from "src/model/purchased-chapter.entity";
 import { Chapter } from "src/model/chapter.entity";
 import { Comment } from "src/model/comment.entity";
 import { Rating } from "src/model/rating.entity";
+import events from "src/event";
+import { BotService } from "src/bot/bot.service";
 
 @Injectable()
 export class TranslatorService extends BaseService {
@@ -42,6 +38,8 @@ export class TranslatorService extends BaseService {
     @InjectRepository(Rating)
     private ratingRepo: Repository<Rating>,
     private cloudinaryService: CloudinaryService,
+    private eventEmitter: EventEmitter2,
+    private botService: BotService,
   ) {
     super();
   }
@@ -121,6 +119,15 @@ export class TranslatorService extends BaseService {
         { id: assignment.id },
         { isSeriesCreated: true },
       ],
+    });
+
+    // Emit event to create a text channel for the series
+    this.eventEmitter.emit(events.series.created, {
+      series: savedSeries,
+      channelIds: {
+        general: this.botService.getConfig().generalChannel,
+      },
+      translator: assignment.translator.username,
     });
 
     return savedSeries;

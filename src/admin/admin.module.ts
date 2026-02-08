@@ -12,11 +12,13 @@ import { Chapter } from "src/model/chapter.entity";
 import { User } from "src/model/user.entity";
 import { CoinPurchase } from "src/model/coin-purchase.entity";
 import { PurchasedChapter } from "src/model/purchased-chapter.entity";
+import { EventModule } from "src/event/event.module";
 
 @Module({
   imports: [
     UserModule,
     EmailModule,
+    EventModule,
     TypeOrmModule.forFeature([
       TranslatorAssignment,
       Series,

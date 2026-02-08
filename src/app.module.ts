@@ -22,6 +22,7 @@ import { LikeModule } from "./like/like.module";
 import { PaymentModule } from "./payment/payment.module";
 import { AnnouncementModule } from "./announcement/announcement.module";
 import { BotModule } from './bot/bot.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { BotModule } from './bot/bot.module';
     PaymentModule,
     AnnouncementModule,
     BotModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService],

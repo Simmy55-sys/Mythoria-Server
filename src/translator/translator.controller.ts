@@ -11,8 +11,11 @@ import {
   Post,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
+  BadRequestException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { Request } from "express";
 import { CreateSeriesDto } from "./dto/create-series.dto";
@@ -26,13 +29,20 @@ import { CreateChapterDto } from "src/chapter/dto/create-chapter.dto";
 import { UpdateChapterDto } from "src/chapter/dto/update-chapter.dto";
 import { ChapterService } from "src/chapter/chapter.service";
 import { chapterResponseTransformer } from "src/transformers/chapter.transformer";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { CreateBulkChaptersDto } from "src/chapter/dto/create-bulk-chapters.dto";
+import { EntityManager } from "typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import events from "src/event";
+import { Chapter } from "src/model/chapter.entity";
 
 @Controller("translator")
 export class TranslatorController {
   constructor(
     private readonly translatorService: TranslatorService,
     private readonly chapterService: ChapterService,
+    private readonly manager: EntityManager,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get("assignment/:assignmentId")
@@ -153,9 +163,105 @@ export class TranslatorController {
     )
     chapterFile?: Express.Multer.File,
   ) {
-    return chapterResponseTransformer(
-      await this.chapterService.createChapter(seriesId, dto, chapterFile),
+    const chapter = await this.chapterService.createChapter(
+      seriesId,
+      dto,
+      chapterFile,
     );
+    this.eventEmitter.emit(events.chapter.created, { chapter, seriesId });
+    return chapterResponseTransformer(chapter);
+  }
+
+  @Post("series/chapter/:seriesId/bulk")
+  @UseGuards(IsAuthenticated, IsTranslator, SeriesAssignmentGuard)
+  @UseInterceptors(FilesInterceptor("chapterFiles", 100)) // Allow up to 100 files
+  async createBulkChapters(
+    @Param("seriesId") seriesId: string,
+    @Body() dto: CreateBulkChaptersDto,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 50 * 1024 * 1024 }), // 50MB per file
+          new FileTypeValidator({
+            fileType:
+              /(application|text)\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|plain|markdown)/,
+          }),
+        ],
+        fileIsRequired: false, // chapterFiles are optional (can use inbuilt editor or gdrive)
+      }),
+    )
+    chapterFiles?: Express.Multer.File[],
+  ) {
+    return this.manager.transaction(async (transactionalEntity) => {
+      if (!dto.chapters || dto.chapters.length === 0) {
+        throw new BadRequestException("At least one chapter is required");
+      }
+
+      // Normalize chapterFiles to handle undefined or empty array
+      const files = chapterFiles || [];
+
+      // Count chapters that need files (no content and no fileUrl)
+      const chaptersNeedingFiles = dto.chapters.filter(
+        (chapter) => !chapter.content && !chapter.fileUrl,
+      );
+
+      // Validate file count matches chapters needing files
+      if (files.length > 0 && files.length !== chaptersNeedingFiles.length) {
+        throw new BadRequestException(
+          `Number of files (${files.length}) does not match number of chapters requiring files (${chaptersNeedingFiles.length})`,
+        );
+      }
+
+      // Process each chapter sequentially
+      type BulkChapterResult =
+        | { success: true; data: any }
+        | {
+            success: false;
+            error: string;
+            chapterNumber: number;
+            title: string;
+          };
+
+      const results: BulkChapterResult[] = [];
+      const createdChapters: Chapter[] = [];
+      let fileIndex = 0;
+
+      for (const chapterDto of dto.chapters) {
+        // Determine if this chapter needs a file
+        const needsFile = !chapterDto.content && !chapterDto.fileUrl;
+        const chapterFile = needsFile ? files[fileIndex++] : undefined;
+
+        try {
+          const chapter = await this.chapterService.createChapter(
+            seriesId,
+            chapterDto,
+            chapterFile,
+            transactionalEntity,
+          );
+          createdChapters.push(chapter);
+          results.push({
+            success: true,
+            data: chapterResponseTransformer(chapter),
+          });
+        } catch (error: any) {
+          throw new InternalServerErrorException(
+            error.message || "Failed to create chapter",
+          );
+        }
+      }
+
+      this.eventEmitter.emit(events.chapter.bulkCreated, {
+        chapters: createdChapters,
+        seriesId,
+      });
+
+      return {
+        total: dto.chapters.length,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
+        results,
+      };
+    });
   }
 
   @Get("series/chapter/:seriesId")
