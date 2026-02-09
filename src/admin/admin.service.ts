@@ -145,8 +145,7 @@ export class AdminService extends BaseService {
   ) {
     const queryBuilder = this.seriesRepo
       .createQueryBuilder("series")
-      .leftJoinAndSelect("series.categories", "categories")
-      .leftJoinAndSelect("series.chapters", "chapters");
+      .leftJoinAndSelect("series.categories", "categories");
 
     // Apply search filter
     if (filters?.search) {
@@ -216,6 +215,22 @@ export class AdminService extends BaseService {
 
     const assignmentMap = new Map(assignments.map((a) => [a.id, a]));
 
+    // Get chapter counts per series (no full chapter entities loaded)
+    const seriesIds = series.map((s) => s.id);
+    const countRows =
+      seriesIds.length > 0
+        ? await this.chapterRepo
+            .createQueryBuilder("chapter")
+            .select("chapter.seriesId", "seriesId")
+            .addSelect("COUNT(*)", "count")
+            .where("chapter.seriesId IN (:...seriesIds)", { seriesIds })
+            .groupBy("chapter.seriesId")
+            .getRawMany()
+        : [];
+    const chapterCountBySeriesId = new Map(
+      countRows.map((r) => [r.seriesId, Number(r.count)]),
+    );
+
     const data = series.map((s) => {
       const assignment = s.assignmentId
         ? assignmentMap.get(s.assignmentId)
@@ -224,7 +239,7 @@ export class AdminService extends BaseService {
         id: s.id,
         title: s.title,
         cover: s.featuredImage || "/placeholder.svg",
-        totalChapters: s.chapters?.length || 0,
+        totalChapters: chapterCountBySeriesId.get(s.id) ?? 0,
         status: s.status,
         translator: assignment?.translator?.username || null,
         categories: s.categories?.map((c) => c.name) || [],

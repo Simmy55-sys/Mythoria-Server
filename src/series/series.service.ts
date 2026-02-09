@@ -174,10 +174,10 @@ export class SeriesService extends BaseService {
       search?: string;
     },
   ) {
+    const now = new Date();
     const queryBuilder = this.repo
       .createQueryBuilder("series")
       .leftJoinAndSelect("series.categories", "categories")
-      .leftJoinAndSelect("series.chapters", "chapters")
       .leftJoinAndSelect("series.ratings", "ratings")
       .where("series.isVisible = :isVisible", { isVisible: true });
 
@@ -220,7 +220,7 @@ export class SeriesService extends BaseService {
     // Get total count before pagination
     const total = await queryBuilder.getCount();
 
-    // Apply pagination
+    // Apply pagination (no chapters loaded - avoids loading full chapter content)
     const skip = (page - 1) * limit;
     const series = await queryBuilder
       .orderBy("series.createdAt", "DESC")
@@ -228,21 +228,29 @@ export class SeriesService extends BaseService {
       .take(limit)
       .getMany();
 
-    // Filter and sort chapters within each series by publish date (descending)
-    // Only include chapters where publishDate is less than or equal to now
-    const now = new Date();
-    series.forEach((s) => {
-      if (s.chapters) {
-        // Filter out future-dated chapters
-        s.chapters = s.chapters.filter((chapter) => chapter.publishDate <= now);
-        // Sort by publish date (descending)
-        s.chapters.sort((a, b) => {
-          const dateA = new Date(a.publishDate).getTime();
-          const dateB = new Date(b.publishDate).getTime();
-          return dateB - dateA; // Descending order
-        });
+    // Fetch only recent 2 chapters per series (metadata only, no content)
+    if (series.length > 0) {
+      const seriesIds = series.map((s) => s.id);
+      const rawRows = await this.chapterRepo.query(
+        `SELECT id, series_id as "seriesId", chapter_number as "chapterNumber", is_premium as "isPremium", publish_date as "publishDate"
+         FROM (
+           SELECT *, ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY publish_date DESC, created_at DESC) as rn
+           FROM chapters
+           WHERE series_id = ANY($1) AND publish_date <= $2 AND deleted_at IS NULL
+         ) sub
+         WHERE rn <= 2`,
+        [seriesIds, now],
+      );
+      const bySeries = new Map<string, typeof rawRows>();
+      for (const row of rawRows) {
+        const list = bySeries.get(row.seriesId) ?? [];
+        list.push(row);
+        bySeries.set(row.seriesId, list);
       }
-    });
+      series.forEach((s) => {
+        s.chapters = bySeries.get(s.id) ?? [];
+      });
+    }
 
     return {
       data: series,
@@ -259,32 +267,44 @@ export class SeriesService extends BaseService {
     limit: number = 20,
     userId?: string,
   ) {
-    // Get series with relations including bookmarks and likes for counts
+    const now = new Date();
+
+    // Load series without chapters to avoid loading full chapter content
     const series = await this.repo.findOne({
       where: { slug, isVisible: true },
-      relations: ["categories", "ratings", "bookmarks", "likes", "chapters"],
+      relations: ["categories", "ratings", "bookmarks", "likes"],
     });
 
     if (!series) {
       throw new NotFoundException("Series not found");
     }
 
-    // Get paginated chapters - only return chapters where publishDate is less than or equal to now
+    // Total views from chapter read counts (single aggregate query, no chapter content)
+    const totalViewsRow = await this.chapterRepo
+      .createQueryBuilder("chapter")
+      .select("COALESCE(SUM(chapter.readCount), 0)", "total")
+      .where("chapter.seriesId = :seriesId", { seriesId: series.id })
+      .andWhere("chapter.publishDate <= :now", { now })
+      .getRawOne<{ total: string }>();
+    (series as Series & { totalViews?: number }).totalViews = Number(
+      totalViewsRow?.total ?? 0,
+    );
+
+    // Paginated chapters (select only list fields, exclude content to save memory)
     const skip = (page - 1) * limit;
-    const now = new Date();
-
-    // Filter chapters in series relation to exclude future-dated chapters
-    if (series.chapters) {
-      series.chapters = series.chapters.filter(
-        (chapter) => chapter.publishDate <= now,
-      );
-    }
-
     const [chapters, totalChapters] = await this.chapterRepo.findAndCount({
       where: {
         seriesId: series.id,
         publishDate: LessThanOrEqual(now),
       },
+      select: [
+        "id",
+        "title",
+        "chapterNumber",
+        "isPremium",
+        "publishDate",
+        "priceInCoins",
+      ],
       order: { chapterNumber: "DESC" },
       skip,
       take: limit,

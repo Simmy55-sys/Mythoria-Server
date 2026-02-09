@@ -78,7 +78,8 @@ export class SeriesDetailsResponseDto {
 
   @Expose()
   @Transform(({ obj }) => {
-    // Calculate total views (sum of all chapter readCount)
+    // Use precomputed totalViews when set (avoids loading all chapters)
+    if (typeof obj?.totalViews === "number") return obj.totalViews;
     const chapters = obj?.chapters || [];
     return chapters.reduce(
       (sum: number, chapter: any) => sum + Number(chapter.readCount || 0),
