@@ -297,7 +297,7 @@ export class TranslatorController {
 
     if (previous?.isPremium && !updatedChapter.isPremium) {
       this.eventEmitter.emit(events.chapter.madeFree, {
-        chapter: updatedChapter,
+        chapter: previous,
         seriesId,
       });
     }
