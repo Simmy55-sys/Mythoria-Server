@@ -81,10 +81,9 @@ export class SeriesCreatedSubscriber {
     await this.seriesRepo.save(savedSeries);
 
     const config = this.botService.getConfig();
-    const seriesUpdateChannelId = (config as { seriesUpdateChannel?: string })
-      ?.seriesUpdateChannel;
+    const seriesUpdateChannelId = config.seriesUpdateChannel;
 
-    // #### General Channel Embed Message ####
+    // #### Update Channel Embed Message ####
     const embeddedMsgGeneral = new EmbedBuilder()
       .setColor(seriesColor)
       .setTitle("🆕 New Novel Series Launched!")
@@ -110,7 +109,7 @@ export class SeriesCreatedSubscriber {
       .setTimestamp();
 
     await this.botService.sendEmbedMessage(
-      generalChannelId,
+      seriesUpdateChannelId as string,
       embeddedMsgGeneral,
     );
   }
