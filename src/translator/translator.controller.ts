@@ -288,16 +288,15 @@ export class TranslatorController {
     @Param("id") id: string,
     @Body() dto: UpdateChapterDto,
   ) {
-    const previous = await this.chapterService.findOne(seriesId, id);
     const updatedChapter = await this.chapterService.updateChapter(
       seriesId,
       id,
       dto,
     );
 
-    if (previous?.isPremium && !updatedChapter.isPremium) {
+    if (dto.isPremium === false) {
       this.eventEmitter.emit(events.chapter.madeFree, {
-        chapter: previous,
+        chapter: updatedChapter,
         seriesId,
       });
     }
