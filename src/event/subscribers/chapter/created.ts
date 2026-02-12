@@ -58,7 +58,7 @@ export class ChapterCreatedSubscriber {
 
     const { slug, title: seriesTitle, channelColor } = series;
     const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
-    const chapterUrl = `${baseUrl}series/${slug}/chapter/${chapter.chapterNumber}`;
+    const chapterUrl = `${baseUrl}series/${slug}/chapter/${chapterNumber}`;
     const seriesUrl = `${baseUrl}series/${slug}`;
     const color = channelColor ? parseInt(channelColor, 10) : 0x5865f2;
 

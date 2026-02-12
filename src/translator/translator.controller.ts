@@ -295,6 +295,7 @@ export class TranslatorController {
     );
 
     if (dto.isPremium === false) {
+      console.log(updatedChapter);
       this.eventEmitter.emit(events.chapter.madeFree, {
         chapter: updatedChapter,
         seriesId,
