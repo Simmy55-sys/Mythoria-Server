@@ -1,12 +1,13 @@
 import { Collection, Client } from "discord.js";
+import handlers from "./handler";
 
 export const commands = new Collection<string, any>();
 
 export async function registerCommands() {
-  const files = ["subscribe", "unsubscribe"]; // auto-load later
+  const actions = ["subscribe", "unsubscribe"]; // auto-load later
 
-  for (const file of files) {
-    const command = await require(`./${file}.command`).default;
+  for (const action of actions) {
+    const command = handlers[action];
     commands.set(command.data.name, command);
   }
 }

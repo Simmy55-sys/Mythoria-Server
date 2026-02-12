@@ -1,16 +1,17 @@
 import { Client } from "discord.js";
 import { BotService } from "../bot.service";
+import handlers from "./data";
 
 // Auto register all events handlers
 
 export function registerHandlers(client: Client, botService: BotService) {
-  const events = ["interactions", "messages"];
+  const actions = ["interactions", "messages"];
 
-  for (const event of events) {
-    const eventFile = require(`./${event}`).default;
+  for (const action of actions) {
+    const actionHandler = handlers[action];
 
-    client.on(eventFile.name, (...args) =>
-      eventFile.execute(botService, ...args),
+    client.on(actionHandler.name, (...args) =>
+      actionHandler.execute(botService, ...args),
     );
   }
 }

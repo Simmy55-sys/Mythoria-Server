@@ -1,7 +1,7 @@
 import { Interaction } from "discord.js";
-import { commands } from "../commands";
-import { SERIES_OPTION_NAME } from "../commands/builder/subscribe";
-import { BotService } from "../bot.service";
+import { commands } from "../../commands";
+import { SERIES_OPTION_NAME } from "../../commands/builder/subscribe";
+import { BotService } from "../../bot.service";
 
 export default {
   name: "interactionCreate",

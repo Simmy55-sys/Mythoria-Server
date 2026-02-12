@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { BotService } from "../bot.service";
+import { BotService } from "../../bot.service";
 
 export default {
   name: "messageCreate",

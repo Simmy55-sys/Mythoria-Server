@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, GuildMember } from "discord.js";
-import { SERIES_OPTION_NAME } from "./builder/subscribe";
+import { SERIES_OPTION_NAME } from "../builder/subscribe";
 
 export default {
   data: {
