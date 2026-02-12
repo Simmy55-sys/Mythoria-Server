@@ -295,9 +295,9 @@ export class TranslatorController {
     );
 
     if (dto.isPremium === false) {
-      console.log(updatedChapter);
+      const chapter = await this.chapterService.findOne(seriesId, id);
       this.eventEmitter.emit(events.chapter.madeFree, {
-        chapter: updatedChapter,
+        chapter: chapter,
         seriesId,
       });
     }
