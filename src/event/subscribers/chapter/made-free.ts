@@ -37,14 +37,8 @@ export class ChapterMadeFreeSubscriber {
     this.logger.log(`Chapter made free: ${title} (series ${seriesId})`);
 
     const config = this.botService.getConfig();
-    const seriesUpdateChannelId = (config as { seriesUpdateChannel?: string })
-      ?.seriesUpdateChannel;
-    if (!seriesUpdateChannelId) {
-      this.logger.warn(
-        "seriesUpdateChannel not configured; skipping notification",
-      );
-      return;
-    }
+    const { seriesUpdateChannel: seriesUpdateChannelId, reactionRoleChannel } =
+      config;
 
     const series = await this.seriesRepo.findOne({
       where: { id: seriesId },
@@ -56,10 +50,10 @@ export class ChapterMadeFreeSubscriber {
       return;
     }
 
-    const { slug, title: seriesTitle, channelColor } = series;
-    const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
-    const chapterUrl = `${baseUrl}series/${slug}/chapter/${chapterNumber}`;
-    const seriesUrl = `${baseUrl}series/${slug}`;
+    const { title: seriesTitle, channelColor } = series;
+    // const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
+    // const chapterUrl = `${baseUrl}series/${slug}/chapter/${chapterNumber}`;
+    // const seriesUrl = `${baseUrl}series/${slug}`;
     const color = channelColor ? parseInt(channelColor, 10) : 0x5865f2;
 
     const embed = new EmbedBuilder()
@@ -71,14 +65,13 @@ export class ChapterMadeFreeSubscriber {
           name: "Chapter",
           value: `**${chapterNumber}. ${title}** is now free to read.`,
         },
-        {
-          name: "Read now",
-          value: `[Chapter ${chapterNumber}](${chapterUrl}) • [Series](${seriesUrl})`,
-        },
+        // {
+        //   name: "Read now",
+        //   value: `[Chapter ${chapterNumber}](${chapterUrl}) • [Series](${seriesUrl})`,
+        // },
         {
           name: "Get notified",
-          value:
-            "Use **/subscribe** in this server to opt in for this series, or **/unsubscribe** to stop.",
+          value: `Get notified by grabbing your role in the <#${reactionRoleChannel}>`,
         },
       )
       .setTimestamp();

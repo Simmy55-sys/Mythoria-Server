@@ -8,7 +8,6 @@ import events from "src/event";
 import { Series } from "src/model/series.entity";
 import { Chapter } from "src/model/chapter.entity";
 import { Repository } from "typeorm";
-import { CLIENT_BASE_URL } from "src/config/env";
 
 const { bulkCreated: CHAPTER_BULK_CREATED } = events.chapter;
 
@@ -40,14 +39,8 @@ export class ChapterBulkCreatedSubscriber {
     );
 
     const config = this.botService.getConfig();
-    const seriesUpdateChannelId = (config as { seriesUpdateChannel?: string })
-      ?.seriesUpdateChannel;
-    if (!seriesUpdateChannelId) {
-      this.logger.warn(
-        "seriesUpdateChannel not configured; skipping notification",
-      );
-      return;
-    }
+    const { seriesUpdateChannel: seriesUpdateChannelId, reactionRoleChannel } =
+      config;
 
     const series = await this.seriesRepo.findOne({
       where: { id: seriesId },
@@ -59,9 +52,9 @@ export class ChapterBulkCreatedSubscriber {
       return;
     }
 
-    const { slug, title: seriesTitle, channelColor } = series;
-    const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
-    const seriesUrl = `${baseUrl}series/${slug}`;
+    const { title: seriesTitle, channelColor } = series;
+    // const baseUrl = this.configService.getOrThrow<string>(CLIENT_BASE_URL);
+    // const seriesUrl = `${baseUrl}series/${slug}`;
     const color = channelColor ? parseInt(channelColor, 10) : 0x5865f2;
 
     const sorted = [...chapters].sort(
@@ -75,10 +68,7 @@ export class ChapterBulkCreatedSubscriber {
         : `Chapters ${chapterNumbers.join(", ")}`;
 
     const chapterList = sorted
-      .map(
-        (ch) =>
-          `[${ch.chapterNumber}. ${ch.title}](${baseUrl}/series/${slug}/chapter/${ch.id})`,
-      )
+      .map((ch) => ch.chapterNumber.toString())
       .join(" • ");
 
     const embed = new EmbedBuilder()
@@ -89,19 +79,15 @@ export class ChapterBulkCreatedSubscriber {
       )
       .addFields({
         name: "Read",
-        value:
-          chapterList.length > 1024
-            ? `[View all chapters](${seriesUrl})`
-            : chapterList,
+        value: chapterList[0] + "-" + chapterList[chapterList.length - 1],
       })
-      .addFields({
-        name: "Series",
-        value: `[View ${seriesTitle}](${seriesUrl})`,
-      })
+      // .addFields({
+      //   name: "Series",
+      //   value: `[View ${seriesTitle}](${seriesUrl})`,
+      // })
       .addFields({
         name: "Get notified",
-        value:
-          "Use **/subscribe** in this server to opt in for this series, or **/unsubscribe** to stop.",
+        value: `Get notified by grabbing your role in the <#${reactionRoleChannel}>`,
       })
       .setTimestamp();
 

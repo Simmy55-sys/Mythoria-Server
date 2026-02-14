@@ -7,7 +7,6 @@ import { BotService } from "src/bot/bot.service";
 import events from "src/event";
 import { Series } from "src/model/series.entity";
 import { Repository } from "typeorm";
-import { CLIENT_BASE_URL } from "src/config/env";
 
 const { created: SERIES_CREATED } = events.series;
 const SERIES_COLORS = [
@@ -81,7 +80,8 @@ export class SeriesCreatedSubscriber {
     await this.seriesRepo.save(savedSeries);
 
     const config = this.botService.getConfig();
-    const seriesUpdateChannelId = config.seriesUpdateChannel;
+    const { seriesUpdateChannel: seriesUpdateChannelId, reactionRoleChannel } =
+      config;
 
     // #### Update Channel Embed Message ####
     const embeddedMsgGeneral = new EmbedBuilder()
@@ -97,13 +97,11 @@ export class SeriesCreatedSubscriber {
         { name: "Translator", value: `@${translator}` },
         {
           name: "Start Reading",
-          value: `[Read Chapter 1](${this.configService.getOrThrow<string>(CLIENT_BASE_URL)}series/${slug})`,
+          value: `Read Chapter 1`,
         },
         {
           name: "📌 Series update notifications",
-          value: seriesUpdateChannelId
-            ? `Get notified in <#${seriesUpdateChannelId}> for new chapters and updates. Use **/subscribe** in this server to opt in, or **/unsubscribe** to stop.`
-            : "New chapters will be announced in the series update channel. Use **/subscribe** to opt in, **/unsubscribe** to stop.",
+          value: `Get notified in <#${seriesUpdateChannelId}> for new chapters and updates. Grab your role in <#${reactionRoleChannel}> to opt in, or remove it to stop.`,
         },
       )
       .setTimestamp();
