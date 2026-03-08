@@ -36,11 +36,14 @@ export class Series extends SoftDeletableEntity {
   @Column("text")
   description: string;
 
+  @Column({ type: "text", nullable: true })
+  prologue: string | null;
+
   @Column({ default: true, name: "is_visible" })
   isVisible: boolean; // visible to readers after admin review
 
   @Column({ default: "ongoing" })
-  status: "ongoing" | "completed";
+  status: "ongoing" | "completed" | "on-hold" | "cancelled";
 
   @Column()
   slug: string;

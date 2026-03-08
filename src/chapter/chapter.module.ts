@@ -9,6 +9,7 @@ import { Series } from "src/model/series.entity";
 import { User } from "src/model/user.entity";
 import { FileReaderModule } from "src/file-reader/file-reader.module";
 import { CloudinaryModule } from "src/cloudinary/cloudinary.module";
+import { ReadingProgressModule } from "src/reading-progress/reading-progress.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CloudinaryModule } from "src/cloudinary/cloudinary.module";
     ]),
     FileReaderModule,
     CloudinaryModule,
+    ReadingProgressModule,
   ],
   controllers: [ChapterController],
   providers: [ChapterService],

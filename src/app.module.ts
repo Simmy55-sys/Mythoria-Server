@@ -18,6 +18,7 @@ import { FileReaderModule } from "./file-reader/file-reader.module";
 import { CommentModule } from "./comment/comment.module";
 import { SeriesModule } from "./series/series.module";
 import { BookmarkModule } from "./bookmark/bookmark.module";
+import { ReadingProgressModule } from "./reading-progress/reading-progress.module";
 import { LikeModule } from "./like/like.module";
 import { PaymentModule } from "./payment/payment.module";
 import { AnnouncementModule } from "./announcement/announcement.module";
@@ -48,6 +49,7 @@ import { EventModule } from './event/event.module';
     CommentModule,
     SeriesModule,
     BookmarkModule,
+    ReadingProgressModule,
     LikeModule,
     PaymentModule,
     AnnouncementModule,

@@ -50,6 +50,9 @@ export class SeriesDetailsResponseDto {
   novelType: string;
 
   @Expose()
+  prologue: string;
+
+  @Expose()
   originalLanguage: string;
 
   @Expose()

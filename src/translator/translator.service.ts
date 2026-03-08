@@ -92,6 +92,7 @@ export class TranslatorService extends BaseService {
       author: dto.author,
       translatorName: assignment.translator.username,
       description: dto.description ?? "",
+      prologue: dto.prologue ?? null,
       categories,
       status: dto.status,
       novelType: dto.novelType,
@@ -199,6 +200,7 @@ export class TranslatorService extends BaseService {
 
     // Update other fields
     if (dto.description !== undefined) series.description = dto.description;
+    if (dto.prologue !== undefined) series.prologue = dto.prologue;
     if (dto.slug !== undefined) series.slug = dto.slug;
     if (dto.author !== undefined) series.author = dto.author;
     if (dto.status !== undefined) series.status = dto.status;

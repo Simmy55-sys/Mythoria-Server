@@ -17,6 +17,7 @@ import { FileReaderService } from "src/file-reader/file-reader.service";
 import { CloudinaryService } from "src/cloudinary/cloudinary.service";
 import { Series } from "src/model/series.entity";
 import { User } from "src/model/user.entity";
+import { ReadingProgressService } from "src/reading-progress/reading-progress.service";
 
 @Injectable()
 export class ChapterService extends BaseService {
@@ -33,6 +34,7 @@ export class ChapterService extends BaseService {
     private readonly userRepo: Repository<User>,
     private readonly fileReaderService: FileReaderService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly readingProgressService: ReadingProgressService,
     @InjectEntityManager() private manager: EntityManager,
   ) {
     super();
@@ -280,6 +282,15 @@ export class ChapterService extends BaseService {
       }
     }
 
+    // Only update reading progress when the user actually had access to content (free or purchased)
+    if (userId && !chapter.isPremium) {
+      await this.readingProgressService.setLastReadChapter(
+        userId,
+        series.id,
+        chapter.chapterNumber,
+      );
+    }
+
     return {
       chapter: plainToInstance(PublicChapterDto, chapter, {
         excludeExtraneousValues: true,
@@ -304,6 +315,7 @@ export class ChapterService extends BaseService {
         id: series.id,
         title: series.title,
         slug: series.slug,
+        prologue: series.prologue ?? null,
       },
     };
   }

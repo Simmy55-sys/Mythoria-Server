@@ -7,6 +7,10 @@ export class UpdateSeriesDto {
 
   @IsString()
   @IsOptional()
+  prologue?: string;
+
+  @IsString()
+  @IsOptional()
   slug?: string;
 
   @IsString()

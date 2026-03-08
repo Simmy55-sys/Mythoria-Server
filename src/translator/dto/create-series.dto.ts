@@ -10,6 +10,10 @@ export class CreateSeriesDto {
   description?: string;
 
   @IsString()
+  @IsOptional()
+  prologue?: string;
+
+  @IsString()
   @IsNotEmpty()
   slug: string;
 
